@@ -1,0 +1,28 @@
+# Semantic Geodesic Risk Fields — default config
+# Matches pipeline: Phase 0 (LLM) → Phase 1 (SONATA + grid + FMM + risk field)
+
+# Phase 0: LLM prior
+llm:
+  provider: openai  # or "anthropic", "local"
+  model: gpt-4o
+  temperature: 0.0
+
+# Phase 1: SONATA
+sonata:
+  repo_path: null   # set to path to cloned sonata repo, or null to use SONATA_PATH env
+  checkpoint: sonata
+  repo_id: facebook/sonata
+
+# Phase 1: Occupancy & grid
+occupancy:
+  grid_resolution: 0.02   # meters per voxel
+  free_speed: 1.0
+  obstacle_speed: 0.0
+
+# Phase 1: Risk field (from proposal)
+risk_field:
+  shielding_kappa: 2.0    # κ in A(x) = (d_geo/(d_euc+ε))^κ
+  shielding_eps: 1e-6
+  decay_alpha: 1.0        # α in exp(-α * d_geo)
+  sigmoid_steepness: 10   # k for soft sign gating
+  blend_exponent: 2       # p for generalized blending
