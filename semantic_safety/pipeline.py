@@ -27,6 +27,7 @@ def run_phase0(
         provider=cfg.get("provider", "openai"),
         model=cfg.get("model", "gpt-4o"),
         temperature=cfg.get("temperature", 0.0),
+        return_fallback_on_error=cfg.get("return_fallback_on_error", False),
     )
     return prior.get_risk_prior(manipulated, scene)
 

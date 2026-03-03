@@ -24,11 +24,14 @@ def main():
     p = argparse.ArgumentParser(description="Semantic Geodesic Risk Fields pipeline")
     p.add_argument("--config", type=str, default=None, help="Path to config YAML")
     p.add_argument("--phase0", action="store_true", help="Run only Phase 0 (LLM prior)")
+    p.add_argument("--fallback", action="store_true", help="Use default prior if LLM fails (e.g. quota); no API needed")
     p.add_argument("--manipulated", type=str, default="Water", help="Manipulated object name")
     p.add_argument("--scene", type=str, default="Laptop", help="Scene/hazard object name")
     args = p.parse_args()
 
     config = load_config(args.config)
+    if args.fallback:
+        config.setdefault("llm", {})["return_fallback_on_error"] = True
 
     if args.phase0:
         prior = run_phase0(args.manipulated, args.scene, config)

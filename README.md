@@ -48,21 +48,45 @@ semantic_safety/
 
 ## Setup
 
-1. **Clone SONATA** (required for Phase 1):
+### Conda environment (recommended)
 
-   ```bash
-   cd /path/to/semantic_safety
-   git clone https://github.com/facebookresearch/sonata.git
-   # Then install sonata per its README (conda env or pip + deps).
-   ```
+From the project root:
 
-2. **Python env** (for this repo):
+```bash
+cd /Users/giunglee/Documents/semantic_safety   # or your path
+conda env create -f environment.yml
+conda activate semantic_safety
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+To **recreate** the env (e.g. after removing it):
 
-3. **LLM**: Set `OPENAI_API_KEY` (or your LLM provider key) for Phase 0.
+```bash
+conda env remove -n semantic_safety
+conda env create -f environment.yml
+conda activate semantic_safety
+```
+
+### Optional: API key for Phase 0 (LLM)
+
+- **Gemini** (default in config): set `GOOGLE_API_KEY` (get a key at [Google AI Studio](https://aistudio.google.com/apikey)).
+- **OpenAI**: set `OPENAI_API_KEY` and use `provider: openai` in `config/default.yaml`.
+
+You can set the key only in this env:
+
+```bash
+conda activate semantic_safety
+conda env config vars set GOOGLE_API_KEY=your_key_here
+conda activate semantic_safety   # reactivate to apply
+```
+
+### SONATA (for Phase 1 only)
+
+Clone and install SONATA when you need 3D segmentation:
+
+```bash
+git clone https://github.com/facebookresearch/sonata.git
+# Then install sonata per its README (separate conda/pip deps).
+```
 
 ## Quick run
 

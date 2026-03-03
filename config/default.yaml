@@ -3,9 +3,11 @@
 
 # Phase 0: LLM prior
 llm:
-  provider: openai  # or "anthropic", "local"
-  model: gpt-4o
+  provider: gemini   # "openai" or "gemini"
+  model: gemini-2.5-flash   # e.g. gpt-4o (openai); gemini-2.5-flash, gemini-2.0-flash (gemini)
   temperature: 0.0
+  # When true, use a default prior if the API fails (e.g. quota exceeded). Lets you run without API.
+  return_fallback_on_error: true
 
 # Phase 1: SONATA
 sonata:
