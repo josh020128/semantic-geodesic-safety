@@ -1,0 +1,14 @@
+# Clone separately per README; do not track
+semantic_safety/sonata
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.eggs/
+*.egg-info/
+*.egg
