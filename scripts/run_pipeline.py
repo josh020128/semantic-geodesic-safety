@@ -17,7 +17,6 @@ if str(ROOT) not in sys.path:
 
 from semantic_safety.config import load_config
 from semantic_safety.pipeline import run_phase0, run_pipeline
-from semantic_safety.phase0_llm_prior import RiskPrior
 
 
 def main():
@@ -62,7 +61,7 @@ def main():
         centroid=centroid,
         config_path=args.config,
     )
-    print("Phase 1 output keys:", list(out.keys()))
+    print("Loop 1 output keys:", list(out.keys()))
     print("V_risk shape:", out["V_risk"].shape)
     print("V_risk min/max:", out["V_risk"].min(), out["V_risk"].max())
 

@@ -1,4 +1,4 @@
-"""Phase 2: Risk-aware trajectory optimization (placeholder)."""
+"""Loop 2: whole-body kinematics and risk-aware trajectory optimization."""
 
 from .optimizer import RiskAwareOptimizer
 

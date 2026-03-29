@@ -1,49 +1,59 @@
 # Semantic Geodesic Risk Fields
 
-Zero-shot topological safety for learned robot policies: 3D semantic risk from SONATA + LLM prior + geodesic distance.
+Zero-shot topological safety for learned robot policies: 3D semantic risk from RGB-D perception, LLM prior, and geodesic distance.
 
 ## Architecture (from proposal)
 
-- **Phase 0 — Offline LLM prior**: Object strings → LLM → base risk score + 6-directional decay weights (`w_+x, w_-x, w_+y, w_-y, w_+z, w_-z`).
-- **Phase 1 — Real-time risk field**: RGB-D → SONATA (semantic segmentation) → occupancy grid → boundary seeding → FMM (geodesic + Euclidean) → directional interpolation → occlusion shielding → final cost field `V_risk(x)`.
-- **Phase 2 — Trajectory optimization**: Risk-aware control (placeholder).
+- **Phase 0 — Offline LLM dataset**: Object strings → LLM → base risk score + 6-directional decay weights (`w_+x, w_-x, w_+y, w_-y, w_+z, w_-z`), written to JSON (e.g. under `data/`). Batched generation lives in `semantic_safety.phase0_dataset`.
+- **Loop 1 — Real-time risk field**: Perception (`perception_2d3d`: RealSense, 2D grounding, 3D deprojection) → optional fast/slow semantic routing (`semantic_router`) → occupancy grid → boundary seeding → FMM (geodesic + Euclidean) → directional interpolation → shielding → final cost field `V_risk(x)` (`risk_field`, `metric_propagation`).
+- **Loop 2 — Trajectory evaluation**: Whole-body kinematics and local trajectory optimization against the risk grid (`phase2_control`).
+
+`semantic_safety.pipeline` orchestrates Phase 0 and Loop 1; Loop 2 is consumed via `phase2_control`.
 
 ## Repository layout
 
 ```
-semantic_safety/
+.
 ├── README.md
 ├── requirements.txt
 ├── config/
 │   └── default.yaml
-├── semantic_safety/           # Main package
-│   ├── __init__.py
-│   ├── config.py
-│   ├── pipeline.py            # Orchestrates Phase 0 → 1 → 2
-│   ├── phase0_llm_prior/      # LLM → risk score + 6-directional weights
-│   │   ├── __init__.py
-│   │   ├── llm_prior.py
-│   │   └── prompts.py
-│   ├── sonata_integration/    # SONATA wrapper for 3D semantic segmentation
-│   │   ├── __init__.py
-│   │   └── segmenter.py
-│   ├── occupancy/             # Grid, boundary seeding
-│   │   ├── __init__.py
-│   │   └── grid.py
-│   ├── distance/              # FMM: geodesic + Euclidean
-│   │   ├── __init__.py
-│   │   └── fast_marching.py
-│   ├── risk_field/            # W_hazard(x), A(x), V_risk(x)
-│   │   ├── __init__.py
-│   │   ├── directional.py
-│   │   ├── shielding.py
-│   │   └── cost.py
-│   └── phase2_optimization/   # Placeholder: risk-aware trajectory opt
-│       ├── __init__.py
-│       └── optimizer.py
+├── data/                           # Offline caches and priors
+│   └── semantic_risk_demo.json     # JSON dataset produced by Phase 0 (placeholder)
 ├── scripts/
-│   └── run_pipeline.py
-└── sonata/                     # Clone from https://github.com/facebookresearch/sonata
+│   ├── run_phase0.py               # Generates the JSON dataset (stub)
+│   ├── run_loop1_demo.py           # Real-time perception & risk grid (stub)
+│   └── run_pipeline.py             # CLI: Phase 0 and/or synthetic Loop 1
+└── semantic_safety/                # Main package
+    ├── __init__.py
+    ├── config.py
+    ├── pipeline.py                 # Master orchestrator for Loop 1 & hooks to Loop 2
+    ├── phase0_dataset/             # Offline generation only
+    │   ├── __init__.py
+    │   ├── generator.py            # Batched API logic for dataset creation
+    │   └── prompts.py              # Meta-prompts (3-layer taxonomy)
+    ├── perception_2d3d/            # Loop 1 “eyes” (stubs)
+    │   ├── __init__.py
+    │   ├── realsense.py
+    │   ├── segment_2d.py
+    │   └── deproject_3d.py
+    ├── semantic_router/            # Fast/slow brain (stubs)
+    │   ├── __init__.py
+    │   ├── router.py
+    │   ├── embeddings.py
+    │   └── slow_brain.py
+    ├── metric_propagation/         # Grid and distances
+    │   ├── __init__.py
+    │   ├── occupancy_grid.py
+    │   └── fmm_distance.py
+    ├── risk_field/                 # Math engine
+    │   ├── __init__.py
+    │   ├── interpolation.py        # Discrete 6-directional weights → continuous field
+    │   └── superposition.py        # Shielding and V_risk composition
+    └── phase2_control/             # Loop 2
+        ├── __init__.py
+        ├── kinematics.py           # Stub: whole-body / tilt penalty
+        └── optimizer.py            # Local trajectory optimizer (placeholder)
 ```
 
 ## Setup
@@ -53,7 +63,7 @@ semantic_safety/
 From the project root:
 
 ```bash
-cd /Users/giunglee/Documents/semantic_safety   # or your path
+cd /path/to/semantic-geodesic-safety
 conda env create -f environment.yml
 conda activate semantic_safety
 ```
@@ -68,10 +78,8 @@ conda activate semantic_safety
 
 ### Optional: API key for Phase 0 (LLM)
 
-- **Gemini** (default in config): set `GOOGLE_API_KEY` (get a key at [Google AI Studio](https://aistudio.google.com/apikey)).
+- **Gemini** (default in config): set `GOOGLE_API_KEY` (see [Google AI Studio](https://aistudio.google.com/apikey)).
 - **OpenAI**: set `OPENAI_API_KEY` and use `provider: openai` in `config/default.yaml`.
-
-You can set the key only in this env:
 
 ```bash
 conda activate semantic_safety
@@ -79,14 +87,9 @@ conda env config vars set GOOGLE_API_KEY=your_key_here
 conda activate semantic_safety   # reactivate to apply
 ```
 
-### SONATA (for Phase 1 only)
+### Perception stack (Loop 1)
 
-Clone and install SONATA when you need 3D segmentation:
-
-```bash
-git clone https://github.com/facebookresearch/sonata.git
-# Then install sonata per its README (separate conda/pip deps).
-```
+RealSense, Lang-SAM / Grounded-SAM, and Open3D wiring will live under `semantic_safety.perception_2d3d` once implemented. Until then, provide `point_cloud["segment"]` yourself or use synthetic labels in scripts.
 
 ## Quick run
 
@@ -95,7 +98,12 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 python scripts/run_pipeline.py --config config/default.yaml
 ```
 
+Phase 0 only:
+
+```bash
+python scripts/run_pipeline.py --phase0 --manipulated "Water" --scene "Laptop"
+```
+
 ## References
 
 - Proposal: *Semantic Geodesic Risk Fields: Zero-Shot Topological Safety for Learned Robot Policies*
-- SONATA: [facebookresearch/sonata](https://github.com/facebookresearch/sonata) (CVPR’25)

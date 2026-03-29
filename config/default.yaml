@@ -1,7 +1,7 @@
 # Semantic Geodesic Risk Fields — default config
-# Matches pipeline: Phase 0 (LLM) → Phase 1 (SONATA + grid + FMM + risk field)
+# Matches pipeline: Phase 0 (LLM dataset) → Loop 1 (grid + FMM + risk field)
 
-# Phase 0: LLM prior
+# Phase 0: LLM prior / JSON dataset generation
 llm:
   provider: gemini   # "openai" or "gemini"
   model: gemini-2.5-flash   # e.g. gpt-4o (openai); gemini-2.5-flash, gemini-2.0-flash (gemini)
@@ -9,19 +9,13 @@ llm:
   # When true, use a default prior if the API fails (e.g. quota exceeded). Lets you run without API.
   return_fallback_on_error: true
 
-# Phase 1: SONATA
-sonata:
-  repo_path: null   # set to path to cloned sonata repo, or null to use SONATA_PATH env
-  checkpoint: sonata
-  repo_id: facebook/sonata
-
-# Phase 1: Occupancy & grid
+# Loop 1: Occupancy & grid (perception populates labels upstream)
 occupancy:
   grid_resolution: 0.02   # meters per voxel
   free_speed: 1.0
   obstacle_speed: 0.0
 
-# Phase 1: Risk field (from proposal)
+# Loop 1: Risk field (from proposal)
 risk_field:
   shielding_kappa: 2.0    # κ in A(x) = (d_geo/(d_euc+ε))^κ
   shielding_eps: 1e-6

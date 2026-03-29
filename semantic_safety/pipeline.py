@@ -1,6 +1,6 @@
 """
-Main pipeline: Phase 0 (LLM prior) → Phase 1 (risk field) → Phase 2 (optimization placeholder).
-Orchestrates SONATA, occupancy, FMM, directional interpolation, and final V_risk.
+Main pipeline: Phase 0 (LLM prior) → Loop 1 (risk field) → Loop 2 (optimization).
+Orchestrates perception outputs, occupancy, FMM, directional interpolation, and final V_risk.
 """
 
 from typing import Any
@@ -8,12 +8,14 @@ from typing import Any
 import numpy as np
 
 from .config import load_config
-from .phase0_llm_prior import LLMPrior, RiskPrior
-from .sonata_integration import SonataSegmenter
-from .occupancy import build_occupancy_grid, extract_boundary_seeds
-from .distance import geodesic_distance_field, euclidean_distance_field
-from .risk_field import directional_weight_grid, shielding_ratio, risk_cost_field
-from .phase2_optimization import RiskAwareOptimizer
+from .metric_propagation import (
+    build_occupancy_grid,
+    euclidean_distance_field,
+    extract_boundary_seeds,
+    geodesic_distance_field,
+)
+from .phase0_dataset import LLMPrior, RiskPrior
+from .risk_field import directional_weight_grid, risk_cost_field, shielding_ratio
 
 
 def run_phase0(
@@ -40,27 +42,23 @@ def run_phase1(
     config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Phase 1: SONATA segmentation → occupancy → FMM → directional + shielding → V_risk.
-    point_cloud: coord (N,3), color (N,3), normal (N,3); segment optional (filled by SONATA).
+    Loop 1: semantic labels on points → occupancy → FMM → directional + shielding → V_risk.
+    point_cloud: coord (N,3), color (N,3), normal (N,3); segment (N,) required for meaningful hazards
+    (populate via perception_2d3d when implemented).
     hazard_label: semantic label id for the hazard object.
     centroid: (3,) world coords of hazard centroid.
     risk_prior: from Phase 0.
     Returns dict with V_risk, d_geo, d_euc, grid, origin, shape, resolution.
     """
     cfg = config or {}
-    sonata_cfg = cfg.get("sonata", {})
     occ_cfg = cfg.get("occupancy", {})
     risk_cfg = cfg.get("risk_field", {})
 
     resolution = occ_cfg.get("grid_resolution", 0.02)
-    segmenter = SonataSegmenter(
-        repo_path=sonata_cfg.get("repo_path"),
-        checkpoint=sonata_cfg.get("checkpoint", "sonata"),
-        repo_id=sonata_cfg.get("repo_id", "facebook/sonata"),
-    )
-    segmented = segmenter.segment(point_cloud, return_features=True)
-    coords = segmented["coord"]
-    segment = segmented.get("segment", np.zeros(len(coords), dtype=np.int32))
+    coords = point_cloud["coord"]
+    segment = point_cloud.get("segment")
+    if segment is None:
+        segment = np.zeros(len(coords), dtype=np.int32)
 
     grid, origin, shape, hazard_voxels = build_occupancy_grid(
         coords,
@@ -123,7 +121,7 @@ def run_pipeline(
     config_path: str | None = None,
 ) -> dict[str, Any]:
     """
-    Full pipeline: Phase 0 → Phase 1. Phase 2 is optional (placeholder).
+    Full pipeline: Phase 0 → Loop 1. Loop 2 hooks live in phase2_control.
     """
     config = load_config(config_path)
     prior = run_phase0(manipulated_object, scene_object, config)

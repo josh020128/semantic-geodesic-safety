@@ -5,6 +5,5 @@ scipy>=1.10
 openai>=1.0
 google-genai>=1.0.0   # for Gemini (Phase 0 LLM prior); replaces deprecated google-generativeai
 
-# SONATA is installed separately (see README):
-# - Clone https://github.com/facebookresearch/sonata
-# - Install its deps (torch, spconv, etc.) and optionally: pip install -e ./sonata
+# Loop 1 perception (RealSense, Lang-SAM/Grounded-SAM, Open3D) is optional — install per
+# semantic_safety.perception_2d3d when wired; not listed here yet.
