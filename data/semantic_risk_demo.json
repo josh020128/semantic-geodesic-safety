@@ -1,1 +1,1380 @@
-[]
+[
+    {
+        "manipulated": "cup of water",
+        "scene": "cup of water",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.2
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "kitchen knife",
+        "families": [
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal",
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.8,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "heavy metal wrench",
+        "families": [
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "open laptop",
+        "families": [
+            "liquid",
+            "electrical"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 1.0,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "wine glass",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.7,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "balloon",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "power strip",
+        "families": [
+            "liquid",
+            "electrical"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 1.0,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "kitchen sink",
+        "families": [
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.05,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "plastic tray",
+        "families": [
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "cup of water",
+        "families": [
+            "sharp",
+            "contamination"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "kitchen knife",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.5,
+            "w_-z": 0.5
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "heavy metal wrench",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.3
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "open laptop",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "wine glass",
+        "families": [
+            "sharp",
+            "fragile",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 1.0,
+            "w_-x": 1.0,
+            "w_+y": 1.0,
+            "w_-y": 1.0,
+            "w_+z": 1.0,
+            "w_-z": 1.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "balloon",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 1.0,
+            "w_-x": 1.0,
+            "w_+y": 1.0,
+            "w_-y": 1.0,
+            "w_+z": 1.0,
+            "w_-z": 1.0
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "power strip",
+        "families": [
+            "sharp",
+            "electrical",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "kitchen sink",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.2
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "plastic tray",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.7,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "cup of water",
+        "families": [
+            "thermal",
+            "electrical"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.9,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "kitchen knife",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "heavy metal wrench",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "open laptop",
+        "families": [
+            "thermal",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "wine glass",
+        "families": [
+            "thermal",
+            "fragile",
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "balloon",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "power strip",
+        "families": [
+            "thermal",
+            "electrical"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "kitchen sink",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "plastic tray",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "contamination"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.8,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "kitchen knife",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "heavy metal wrench",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "open laptop",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "wine glass",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "balloon",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "power strip",
+        "families": [
+            "impact",
+            "electrical"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "kitchen sink",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "heavy metal wrench",
+        "scene": "plastic tray",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.7
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.8,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "kitchen knife",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "thermal"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.6,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "heavy metal wrench",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "open laptop",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.8,
+            "w_-z": 0.8
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "wine glass",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.9,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "balloon",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "power strip",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "kitchen sink",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "open laptop",
+        "scene": "plastic tray",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.8,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "kitchen knife",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "thermal"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.6,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "heavy metal wrench",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "open laptop",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.9,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "wine glass",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.9,
+            "w_-x": 0.9,
+            "w_+y": 0.9,
+            "w_-y": 0.9,
+            "w_+z": 0.9,
+            "w_-z": 0.9
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "balloon",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.8,
+            "w_-z": 0.8
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "power strip",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "kitchen sink",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "wine glass",
+        "scene": "plastic tray",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "cup of water",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "kitchen knife",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "hot soldering iron",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "heavy metal wrench",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "open laptop",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "wine glass",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "balloon",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "power strip",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "kitchen sink",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "balloon",
+        "scene": "plastic tray",
+        "families": [],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.05,
+            "w_-x": 0.05,
+            "w_+y": 0.05,
+            "w_-y": 0.05,
+            "w_+z": 0.05,
+            "w_-z": 0.05
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "cup of water",
+        "families": [
+            "electrical",
+            "thermal"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.9,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "kitchen knife",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "heavy metal wrench",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "open laptop",
+        "families": [
+            "impact",
+            "electrical"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.8,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "wine glass",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.9,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "balloon",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.6,
+            "w_-z": 0.6
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "power strip",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "kitchen sink",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "power strip",
+        "scene": "plastic tray",
+        "families": [
+            "impact"
+        ],
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.1
+        },
+        "receptacle_attenuation": 0.1
+    }
+]

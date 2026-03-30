@@ -4,14 +4,31 @@
 
 name: semantic_safety
 channels:
+  - pytorch
   - conda-forge
   - defaults
 dependencies:
   - python=3.11
   - pip
+  - pytorch
+  - torchvision
   - pip:
+    # --- Core Math & Config ---
     - numpy>=1.24,<2.0
-    - pyyaml>=6.0
     - scipy>=1.10
-    - openai>=1.0
+    - pyyaml>=6.0
+    
+    # --- LLM API (Phase 0 & Slow-Brain) ---
     - google-genai>=1.0.0
+    - openai>=1.0
+    
+    # --- Perception (The "Eyes") ---
+    - pyrealsense2
+    - opencv-python
+    - open3d
+    
+    # --- Semantic Router (The "Brain") ---
+    - sentence-transformers
+    
+    # --- Metric Propagation (The "Math") ---
+    - scikit-fmm
