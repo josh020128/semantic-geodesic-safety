@@ -12,3 +12,7 @@ __pycache__/
 .eggs/
 *.egg-info/
 *.egg
+requirements-no-fmm.txt
+.venv/
+__pycache__/
+*.pyc
