@@ -1,86 +1,114 @@
 """
-Fast Marching Method for geodesic distance from seed surface S.
-Euclidean distance field from hazard centroid for shielding ratio A(x).
+Fast Marching / Eikonal distances on a 3D voxel workspace.
+
+- ``WorkspaceGrid``: fixed-axis grid; uses ``scikit-fmm`` for boundary-conformal distance.
 """
 
+from __future__ import annotations
 from typing import Tuple
-
 import numpy as np
 
+try:
+    import skfmm
+except ImportError as e:
+    skfmm = None 
+    _SKFMM_IMPORT_ERROR = e
 
-def _neighbors_6(shape: Tuple[int, int, int], i: int, j: int, k: int):
-    """6-neighborhood in 3D."""
-    out = []
-    if i > 0:
-        out.append((i - 1, j, k))
-    if i < shape[0] - 1:
-        out.append((i + 1, j, k))
-    if j > 0:
-        out.append((i, j - 1, k))
-    if j < shape[1] - 1:
-        out.append((i, j + 1, k))
-    if k > 0:
-        out.append((i, j, k - 1))
-    if k < shape[2] - 1:
-        out.append((i, j, k + 1))
-    return out
+def _require_skfmm() -> None:
+    if skfmm is None:
+        raise ImportError(
+            "scikit-fmm is required for WorkspaceGrid. Install with: pip install scikit-fmm"
+        ) from _SKFMM_IMPORT_ERROR
 
-
-def geodesic_distance_field(
-    traversable: np.ndarray,
-    seed_indices: np.ndarray,
-    resolution: float = 1.0,
-) -> np.ndarray:
+class WorkspaceGrid:
     """
-    Isotropic FMM on 3D grid. traversable: bool grid, True = free (speed 1).
-    seed_indices: (K, 3) int. Returns distance grid (same shape), np.inf where not reached.
+    3D voxel workspace aligned with world axes. Uses the Eikonal equation (FMM via skfmm)
+    for exact distance from the physical hazard boundary ∂Ω.
     """
-    from heapq import heappush, heappop
 
-    shape = traversable.shape
-    dist = np.full(shape, np.inf, dtype=np.float64)
-    for idx in seed_indices:
-        i, j, k = int(idx[0]), int(idx[1]), int(idx[2])
-        if 0 <= i < shape[0] and 0 <= j < shape[1] and 0 <= k < shape[2] and traversable[i, j, k]:
-            dist[i, j, k] = 0.0
+    def __init__(
+        self,
+        bounds: Tuple[float, float, float, float, float, float] = (-1.0, 1.0, -1.0, 1.0, 0.0, 1.0),
+        resolution: float = 0.02
+    ):
+        _require_skfmm()
+        if resolution <= 0:
+            raise ValueError("resolution must be positive.")
 
-    # Min-heap (d, i, j, k)
-    heap = []
-    for idx in seed_indices:
-        i, j, k = int(idx[0]), int(idx[1]), int(idx[2])
-        if 0 <= i < shape[0] and 0 <= j < shape[1] and 0 <= k < shape[2] and traversable[i, j, k]:
-            heappush(heap, (0.0, i, j, k))
+        self.res = float(resolution)
+        self.bounds = bounds
+        xmin, xmax, ymin, ymax, zmin, zmax = bounds
 
-    while heap:
-        d, i, j, k = heappop(heap)
-        if d > dist[i, j, k]:
-            continue
-        for ni, nj, nk in _neighbors_6(shape, i, j, k):
-            if not traversable[ni, nj, nk]:
-                continue
-            step = resolution  # isotropic
-            nd = d + step
-            if nd < dist[ni, nj, nk]:
-                dist[ni, nj, nk] = nd
-                heappush(heap, (nd, ni, nj, nk))
+        # Create coordinate arrays
+        self.x = np.arange(xmin, xmax, self.res, dtype=np.float64)
+        self.y = np.arange(ymin, ymax, self.res, dtype=np.float64)
+        self.z = np.arange(zmin, zmax, self.res, dtype=np.float64)
+        
+        # 'ij' indexing ensures shape matches (nx, ny, nz)
+        self.X, self.Y, self.Z = np.meshgrid(self.x, self.y, self.z, indexing="ij")
+        self.shape = self.X.shape
+        self.origin = np.array([xmin, ymin, zmin], dtype=np.float64)
 
-    return dist
+    def _phi_from_object_mask(self, object_mask: np.ndarray) -> np.ndarray:
+        """
+        Creates a level-set field. -1 inside the object, 1 outside.
+        This forces scikit-fmm to calculate distance exactly from the boundary ∂Ω (phi=0).
+        """
+        object_mask = np.asarray(object_mask, dtype=bool)
+        if object_mask.shape != self.shape:
+            raise ValueError(
+                f"object_mask shape {object_mask.shape} does not match grid shape {self.shape}."
+            )
+        return np.where(object_mask, -1.0, 1.0).astype(np.float64)
 
+    def compute_euclidean_distance(self, object_mask: np.ndarray) -> np.ndarray:
+        """
+        Clamped non-negative distance from ∂Ω: inside the hazard (signed distance < 0) → 0 so
+        exp(-α d) stays at full risk; outside, d is the usual Eikonal distance (unobstructed).
+        """
+        _require_skfmm()
+        object_mask = np.asarray(object_mask, dtype=bool)
+        if object_mask.shape != self.shape:
+            raise ValueError(
+                f"object_mask shape {object_mask.shape} does not match grid shape {self.shape}."
+            )
+        if not np.any(object_mask):
+            return np.full(self.shape, np.inf, dtype=np.float64)
 
-def euclidean_distance_field(
-    grid_shape: Tuple[int, int, int],
-    origin: np.ndarray,
-    centroid: np.ndarray,
-    resolution: float,
-) -> np.ndarray:
-    """
-    Euclidean distance from centroid to each voxel center.
-    origin: (3,) world coords of grid[0,0,0]. centroid: (3,) world. resolution: voxel size.
-    """
-    nx, ny, nz = grid_shape
-    ix = (np.arange(nx, dtype=np.float64) + 0.5) * resolution + origin[0]
-    iy = (np.arange(ny, dtype=np.float64) + 0.5) * resolution + origin[1]
-    iz = (np.arange(nz, dtype=np.float64) + 0.5) * resolution + origin[2]
-    xx, yy, zz = np.meshgrid(ix, iy, iz, indexing="ij")
-    cx, cy, cz = centroid[0], centroid[1], centroid[2]
-    return np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2 + (zz - cz) ** 2)
+        phi = self._phi_from_object_mask(object_mask)
+        dist = skfmm.distance(phi, dx=self.res)
+        return np.maximum(0.0, np.asarray(dist, dtype=np.float64))
+
+    def compute_geodesic_distance(self, object_mask: np.ndarray, occupancy_grid: np.ndarray) -> np.ndarray:
+        """
+        Obstacle-aware geodesic distance from ∂Ω (clamped SDF: inside object → 0, outside ≥ 0).
+        occupancy_grid: bool array (True = free, False = obstacle).
+        """
+        _require_skfmm()
+        object_mask = np.asarray(object_mask, dtype=bool)
+        if object_mask.shape != self.shape:
+            raise ValueError(
+                f"object_mask shape {object_mask.shape} does not match grid shape {self.shape}."
+            )
+        if not np.any(object_mask):
+            return np.full(self.shape, np.inf, dtype=np.float64)
+
+        free = np.asarray(occupancy_grid, dtype=bool)
+        if free.shape != self.shape:
+            raise ValueError(
+                f"occupancy_grid shape {free.shape} does not match grid shape {self.shape}."
+            )
+
+        phi = self._phi_from_object_mask(object_mask)
+        
+        # THE FIX: Mask out obstacles, BUT guarantee the object itself is unmasked 
+        # so the zero-level set (boundary) is visible to the FMM solver.
+        obstacle_mask = (~free) & (~object_mask)
+        
+        phi_masked = np.ma.MaskedArray(phi, mask=obstacle_mask)
+
+        dist = skfmm.distance(phi_masked, dx=self.res)
+        
+        # Safely handle both MaskedArrays and standard ndarrays
+        dist_filled = np.ma.filled(dist, fill_value=np.inf)
+        return np.maximum(0.0, np.asarray(dist_filled, dtype=np.float64))

@@ -8,14 +8,10 @@ from typing import Any
 import numpy as np
 
 from .config import load_config
-from .metric_propagation import (
-    build_occupancy_grid,
-    euclidean_distance_field,
-    extract_boundary_seeds,
-    geodesic_distance_field,
-)
+from .metric_propagation import WorkspaceGrid
+from .metric_propagation.occupancy_grid import build_occupancy_grid
 from .phase0_dataset import LLMPrior, RiskPrior
-from .risk_field import directional_weight_grid, risk_cost_field, shielding_ratio
+from .risk_field import compute_directional_weights, risk_cost_field, shielding_ratio
 
 
 def run_phase0(
@@ -46,9 +42,11 @@ def run_phase1(
     point_cloud: coord (N,3), color (N,3), normal (N,3); segment (N,) required for meaningful hazards
     (populate via perception_2d3d when implemented).
     hazard_label: semantic label id for the hazard object.
-    centroid: (3,) world coords of hazard centroid.
+    centroid: (3,) world coords of hazard centroid (used for directional W_hazard only).
     risk_prior: from Phase 0.
     Returns dict with V_risk, d_geo, d_euc, grid, origin, shape, resolution.
+    Distances d_geo / d_euc are boundary-conformal Eikonal fields from ∂Ω via ``WorkspaceGrid``
+    (geodesic with occupancy; Euclidean baseline without obstacle masking for shielding).
     """
     cfg = config or {}
     occ_cfg = cfg.get("occupancy", {})
@@ -70,20 +68,48 @@ def run_phase1(
     traversable = grid
     if hazard_voxels.size == 0:
         hazard_voxels = np.argwhere(~traversable)
-    seeds = extract_boundary_seeds(grid, hazard_voxels)
 
-    d_geo = geodesic_distance_field(traversable, seeds, resolution=resolution)
-    d_euc = euclidean_distance_field(shape, origin, centroid, resolution)
+    nx, ny, nz = int(shape[0]), int(shape[1]), int(shape[2])
+    ox, oy, oz = float(origin[0]), float(origin[1]), float(origin[2])
+    res = float(resolution)
+    bounds = (
+        ox,
+        ox + nx * res,
+        oy,
+        oy + ny * res,
+        oz,
+        oz + nz * res,
+    )
+    workspace = WorkspaceGrid(bounds=bounds, resolution=res)
+    if workspace.shape != (nx, ny, nz):
+        raise RuntimeError(
+            f"WorkspaceGrid shape {workspace.shape} != occupancy shape {(nx, ny, nz)}; "
+            "check bounds/resolution consistency."
+        )
 
-    weights_6 = risk_prior.to_weights_tuple()
-    W_hazard = directional_weight_grid(
-        shape,
-        origin,
-        centroid,
-        resolution,
-        weights_6,
-        sigmoid_steepness=risk_cfg.get("sigmoid_steepness", 10),
-        blend_exponent=risk_cfg.get("blend_exponent", 2),
+    object_mask = np.zeros((nx, ny, nz), dtype=bool)
+    for idx in hazard_voxels:
+        i, j, k = int(idx[0]), int(idx[1]), int(idx[2])
+        if 0 <= i < nx and 0 <= j < ny and 0 <= k < nz:
+            object_mask[i, j, k] = True
+
+    d_geo = workspace.compute_geodesic_distance(object_mask, traversable)
+    d_euc = workspace.compute_euclidean_distance(object_mask)
+
+    weights_dict = {
+        "w_+x": float(risk_prior.w_plus_x),
+        "w_-x": float(risk_prior.w_minus_x),
+        "w_+y": float(risk_prior.w_plus_y),
+        "w_-y": float(risk_prior.w_minus_y),
+        "w_+z": float(risk_prior.w_plus_z),
+        "w_-z": float(risk_prior.w_minus_z),
+    }
+    W_hazard = compute_directional_weights(
+        workspace.X,
+        workspace.Y,
+        workspace.Z,
+        np.asarray(centroid, dtype=np.float64),
+        weights_dict,
     )
     A = shielding_ratio(
         d_geo,

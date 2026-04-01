@@ -1,63 +1,59 @@
 """
-Continuous directional interpolation: W_hazard(x) from 6 LLM weights.
-Soft sign gating (sigmoid) + generalized blending (exponent p).
+Directional interpolation: 6 LLM axis weights → continuous 3D multiplier W(x).
+
+Uses centroid-relative directions (stable for non-convex shapes); pair with FMM distance separately.
 """
 
-from typing import Tuple
+from __future__ import annotations
 
 import numpy as np
+from typing import Dict, Tuple
 
-
-def sigmoid(v: np.ndarray, k: float = 10.0) -> np.ndarray:
-    """σ(v) = 1 / (1 + exp(-k*v))."""
-    return 1.0 / (1.0 + np.exp(-k * v))
-
-
-def directional_weight_grid(
-    grid_shape: Tuple[int, int, int],
-    origin: np.ndarray,
-    centroid: np.ndarray,
-    resolution: float,
-    weights_6: Tuple[float, float, float, float, float, float],
-    sigmoid_steepness: float = 10.0,
-    blend_exponent: float = 2.0,
+def compute_directional_weights(
+    X: np.ndarray, 
+    Y: np.ndarray, 
+    Z: np.ndarray, 
+    bbox: Tuple[float, float, float, float, float, float], 
+    weights_dict: Dict[str, float]
 ) -> np.ndarray:
     """
-    Compute W_hazard(x) for every voxel: directional prior from hazard centroid.
-    weights_6 = (w_+x, w_-x, w_+y, w_-y, w_+z, w_-z).
+    Interpolates 6 discrete LLM weights into a continuous 3D spatial multiplier W(x).
+    Uses AABB for exterior conformity and Centroid-blending for interior continuity.
     """
-    w_px, w_mx, w_py, w_my, w_pz, w_mz = weights_6
-    nx, ny, nz = grid_shape
-    ix = (np.arange(nx, dtype=np.float64) + 0.5) * resolution + origin[0]
-    iy = (np.arange(ny, dtype=np.float64) + 0.5) * resolution + origin[1]
-    iz = (np.arange(nz, dtype=np.float64) + 0.5) * resolution + origin[2]
-    xx, yy, zz = np.meshgrid(ix, iy, iz, indexing="ij")
-    cx, cy, cz = centroid[0], centroid[1], centroid[2]
-    dx = xx - cx
-    dy = yy - cy
-    dz = zz - cz
-    norm = np.sqrt(dx * dx + dy * dy + dz * dz)
-    eps = 1e-12
-    ux = np.where(norm > eps, dx / (norm + eps), 0.0)
-    uy = np.where(norm > eps, dy / (norm + eps), 0.0)
-    uz = np.where(norm > eps, dz / (norm + eps), 0.0)
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    
+    # 1. Vector to the nearest AABB surface (Used for exterior voxels)
+    dx_out = np.maximum(0.0, X - xmax) - np.maximum(0.0, xmin - X)
+    dy_out = np.maximum(0.0, Y - ymax) - np.maximum(0.0, ymin - Y)
+    dz_out = np.maximum(0.0, Z - zmax) - np.maximum(0.0, zmin - Z)
+    
+    # Check which voxels are physically inside the bounding box
+    is_inside = (np.abs(dx_out) + np.abs(dy_out) + np.abs(dz_out)) < 1e-8
+    
+    # 2. Vector from the centroid (Used ONLY for interior voxels)
+    cx, cy, cz = (xmin + xmax) / 2.0, (ymin + ymax) / 2.0, (zmin + zmax) / 2.0
+    
+    # 3. Seamlessly blend the vector fields
+    dx = np.where(is_inside, X - cx, dx_out)
+    dy = np.where(is_inside, Y - cy, dy_out)
+    dz = np.where(is_inside, Z - cz, dz_out)
+    
+    # 4. Standard L1 normalization
+    l1_norm = np.abs(dx) + np.abs(dy) + np.abs(dz)
+    l1_norm = np.maximum(l1_norm, 1e-8) # Prevent division by zero
+    
+    # 5. Calculate lambdas and apply weights
+    W_x = (np.maximum(0.0, dx)/l1_norm)*weights_dict.get('w_+x', 0.0) + (np.maximum(0.0, -dx)/l1_norm)*weights_dict.get('w_-x', 0.0)
+    W_y = (np.maximum(0.0, dy)/l1_norm)*weights_dict.get('w_+y', 0.0) + (np.maximum(0.0, -dy)/l1_norm)*weights_dict.get('w_-y', 0.0)
+    W_z = (np.maximum(0.0, dz)/l1_norm)*weights_dict.get('w_+z', 0.0) + (np.maximum(0.0, -dz)/l1_norm)*weights_dict.get('w_-z', 0.0)
+    
+    return W_x + W_y + W_z
 
-    k = sigmoid_steepness
-    sig_x = sigmoid(ux, k)
-    Wx = sig_x * w_px + (1 - sig_x) * w_mx
-    sig_y = sigmoid(uy, k)
-    Wy = sig_y * w_py + (1 - sig_y) * w_my
-    sig_z = sigmoid(uz, k)
-    Wz = sig_z * w_pz + (1 - sig_z) * w_mz
-
-    p = blend_exponent
-    abs_ux = np.abs(ux) ** p
-    abs_uy = np.abs(uy) ** p
-    abs_uz = np.abs(uz) ** p
-    denom = abs_ux + abs_uy + abs_uz + eps
-    pi_x = abs_ux / denom
-    pi_y = abs_uy / denom
-    pi_z = abs_uz / denom
-
-    W_hazard = pi_x * Wx + pi_y * Wy + pi_z * Wz
-    return W_hazard
+def compute_hazard_field(
+    W_field: np.ndarray, 
+    distance_field: np.ndarray, 
+    gamma: float, 
+    alpha: float = 5.0
+) -> np.ndarray:
+    """Computes the final individual risk field V_i(x)."""
+    return gamma * W_field * np.exp(-alpha * distance_field)

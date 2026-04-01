@@ -17,8 +17,9 @@ occupancy:
 
 # Loop 1: Risk field (from proposal)
 risk_field:
-  shielding_kappa: 2.0    # κ in A(x) = (d_geo/(d_euc+ε))^κ
+  shielding_kappa: 2.0    # κ in A(x) = ((d_euc+ε)/(d_geo+ε))^κ
   shielding_eps: 1e-6
-  decay_alpha: 1.0        # α in exp(-α * d_geo)
-  sigmoid_steepness: 10   # k for soft sign gating
-  blend_exponent: 2       # p for generalized blending
+  decay_alpha: 1.0        # α in exp(-α * d_geo) inside risk_cost_field
+  # Multi-hazard V_final via compute_logsumexp_superposition (smooth max, numerically stable)
+  beta: 10.0               # higher → closer to max(V_i); lower → softer blend
+  v_max: 10.0             # hard cap on combined cost for the trajectory optimizer
