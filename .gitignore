@@ -16,3 +16,4 @@ requirements-no-fmm.txt
 .venv/
 __pycache__/
 *.pyc
+data/assets/
