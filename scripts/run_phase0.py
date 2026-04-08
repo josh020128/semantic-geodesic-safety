@@ -15,7 +15,7 @@ OUTPUT_PATH = DATA_DIR / "semantic_risk_demo.json"
 
 # 1. Define the datasets
 group_a = ["cup of water", "kitchen knife", "hot soldering iron", "heavy metal wrench"]
-group_b = ["open laptop", "wine glass", "balloon", "power strip"]
+group_b = ["open laptop", "wine glass", "balloon", "power strip", "power drill"]
 group_c = ["kitchen sink", "plastic tray"]
 
 M = group_a + group_b
@@ -24,80 +24,76 @@ all_pairs = list(itertools.product(M, S))
 
 SYSTEM_INSTRUCTION = """
 You are an expert physical reasoning engine for a robotics lab.
-We are building a semantic risk field. Your task is to evaluate the risk of a robot moving a manipulated object near a scene object.
-
-The pair is ORDERED:
+Evaluate each ordered pair:
 (manipulated object, scene object)
 
-CRITICAL SPATIAL RULES
 The coordinate frame is centered on the SCENE object:
+- w_+z: above the scene object
+- w_-z: below the scene object
+- w_+x, w_-x, w_+y, w_-y: horizontal directions around it
 
-* w_+z = space directly ABOVE the scene object
-* w_-z = space directly BELOW the scene object
-* w_+x, w_-x, w_+y, w_-y = horizontal directions around the scene object
+Risk should reflect meaningful consequence to the scene object, not mere physical reachability.
+If the scene object is only weakly affected, use low weights.
 
-Interpretation:
+Choose exactly one scene_role:
+- "hazard_target": meaningfully threatened; may emit a repulsive semantic risk field
+- "safe_receptacle": safely receives or contains the manipulated object
+- "support_context": mainly structural/support context (table, wall, floor, shelf, desk, counter)
+- "neutral_context": weak or irrelevant interaction
 
-* If the manipulated object threatens the scene object mainly by being ABOVE it (for example, spilling liquid or dropping onto it), then w_+z should be the dominant direction and w_-z should be low.
-* If the scene object is not meaningfully vulnerable to the manipulated object, then assign a weak risk field with low weights.
-
-IMPORTANT CONSEQUENCE RULE
-Do not assign high risk merely because both objects are hazard-related.
-Risk should reflect whether the manipulated object meaningfully threatens the scene object.
 Examples:
+- water over laptop -> hazard_target
+- water over sink -> safe_receptacle
+- water over table -> support_context
+- wrench over wine glass -> hazard_target
 
-* water over laptop = high risk
-* water over kitchen knife = low risk
-* power strip over plastic tray = low risk
-* wrench over wine glass = high risk
+Use "gravity_column" only when danger mainly comes from above AND the scene object is meaningfully vulnerable to spill/drop from above.
+Otherwise use "standard_decay". Use "none" if vertical behavior is not special.
 
-Taxonomy:
-Hazard Family (choose 1 primary family, optionally 1 secondary family):
+Choose 1 primary hazard family, optionally 1 secondary:
 ["liquid", "thermal", "sharp", "fragile", "impact", "contamination", "electrical"]
 
-Field Topology (choose 1):
+Choose 1 topology_template:
+- "upward_vertical_cone"
+- "isotropic_sphere"
+- "forward_directional_cone"
+- "planar_half_space"
 
-* "upward_vertical_cone": danger mainly from above the scene object; use for spills/drops from above
-* "isotropic_sphere": danger from all directions; use for fragile or keep-away objects
-* "forward_directional_cone": danger concentrated in one horizontal direction; use for pointed or edged tools
-* "planar_half_space": danger mainly lies on one side of a boundary or surface; use for restricted zones or surface-based hazards
+Weight rules:
+- all weights must be in [0.0, 1.0]
+- high weights only if consequence is meaningful
+- safe_receptacle, support_context, and weak interactions should usually have low weights
+- for upward_vertical_cone, w_+z may dominate only when above-position consequence is meaningful
 
-Weight guidance:
+lateral_decay:
+- "narrow", "moderate", or "wide"
 
-* All weights must be between 0.0 and 1.0
-* 1.0 = strongest nominal danger direction
-* 0.0 = no meaningful hazard
-* Low-risk interactions should use low weights, not strong weights with arbitrary topology
-* For upward_vertical_cone cases involving vulnerable scene objects, w_+z should generally be high and w_-z should generally be low
+receptacle_attenuation in [0.1, 1.0]:
+- 1.0 = highly vulnerable target
+- 0.4–0.8 = moderate vulnerability
+- 0.1–0.3 = safe receptacle or negligible consequence
 
-Contextual attenuation:
-
-* receptacle_attenuation in [0.1, 1.0]
-* 1.0: scene object is highly vulnerable to the manipulated object
-* 0.4–0.8: scene object has limited vulnerability / weak consequence
-* 0.1–0.3: safe receptacle or strongly consequence-reducing context
-* If the scene object is a safe receptacle/support (e.g. sink, tray in an appropriate context), use low attenuation and usually low weights as well
-
-Output strictly as a JSON array using this exact schema.
-Do not use markdown code fences. Do not include extra text.
+Output only a JSON array in this schema:
 
 [
-    {
-        "manipulated": "...",
-        "scene": "...",
-        "families": ["..."],
-        "topology_template": "...",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "receptacle_attenuation": 1.0
+  {
+    "manipulated": "...",
+    "scene": "...",
+    "families": ["..."],
+    "scene_role": "hazard_target",
+    "topology_template": "...",
+    "weights": {
+      "w_+x": 0.0,
+      "w_-x": 0.0,
+      "w_+y": 0.0,
+      "w_-y": 0.0,
+      "w_+z": 0.0,
+      "w_-z": 0.0
     },
-    ...
+    "vertical_rule": "standard_decay",
+    "lateral_decay": "moderate",
+    "receptacle_attenuation": 1.0
+  }
 ]
 """
 

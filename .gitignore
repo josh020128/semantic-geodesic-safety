@@ -17,3 +17,6 @@ requirements-no-fmm.txt
 __pycache__/
 *.pyc
 data/assets/
+# Generated outputs
+*.png
+*.npz
