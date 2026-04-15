@@ -1,15 +1,15 @@
 import argparse
 import json
-from pathlib import Path
 
 import cv2
+import re
 import mujoco
 import numpy as np
+from pathlib import Path
 from scipy import ndimage
 
 from semantic_safety.perception_2d3d.mujoco_camera import MujocoCamera
 from semantic_safety.perception_2d3d.lang_sam_wrapper import SemanticPerception
-from semantic_safety.perception_2d3d.deproject_3d import CameraGeometry
 from semantic_safety.perception_2d3d.transform import WorldTransform
 from semantic_safety.semantic_router.router import SemanticRouter
 from semantic_safety.metric_propagation.fmm_distance import WorkspaceGrid
@@ -45,6 +45,122 @@ def get_mujoco_table_top_z(model, data, geom_name="table") -> float:
     geom_half_size = model.geom_size[geom_id]
     table_top_z = float(geom_center[2] + geom_half_size[2])
     return table_top_z
+
+def get_optional_mujoco_table_top_z(model, data, geom_name="table") -> float | None:
+    """
+    Return top surface z of a MuJoCo box geom if it exists.
+    If the geom is missing or is not a box, return None instead of crashing.
+    """
+    geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
+    if geom_id < 0:
+        print(f"Warning: table geom '{geom_name}' not found. table_top_z will be disabled.")
+        return None
+
+    if model.geom_type[geom_id] != mujoco.mjtGeom.mjGEOM_BOX:
+        print(f"Warning: geom '{geom_name}' exists but is not a box. table_top_z will be disabled.")
+        return None
+
+    geom_center = data.geom_xpos[geom_id]
+    geom_half_size = model.geom_size[geom_id]
+    return float(geom_center[2] + geom_half_size[2])
+
+
+def try_geom_box_to_voxel_mask(
+    model,
+    data,
+    grid: WorkspaceGrid,
+    geom_name: str,
+    pad: float = 0.0,
+) -> tuple[np.ndarray | None, str | None]:
+    """
+    Safe version of GT blocker voxelization.
+
+    Returns:
+      (mask, None) if success
+      (None, reason) if skipped
+    """
+    geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
+    if geom_id < 0:
+        return None, "missing_geom"
+
+    if model.geom_type[geom_id] != mujoco.mjtGeom.mjGEOM_BOX:
+        return None, "not_box_geom"
+
+    center = data.geom_xpos[geom_id].copy()
+    rot = data.geom_xmat[geom_id].reshape(3, 3).copy()
+    half = model.geom_size[geom_id].copy() + pad
+
+    pts = np.stack(
+        [
+            grid.X - center[0],
+            grid.Y - center[1],
+            grid.Z - center[2],
+        ],
+        axis=-1,
+    )
+
+    local = pts @ rot
+
+    mask = (
+        (np.abs(local[..., 0]) <= half[0]) &
+        (np.abs(local[..., 1]) <= half[1]) &
+        (np.abs(local[..., 2]) <= half[2])
+    )
+    return mask, None
+
+
+def collect_debug_gt_blocker_masks(
+    model,
+    data,
+    grid: WorkspaceGrid,
+    geom_names: list[str],
+    pad: float = 0.0,
+) -> tuple[list[np.ndarray], list[dict]]:
+    """
+    Optional debug/oracle hook.
+    Missing geoms are skipped rather than raising exceptions.
+    """
+    masks: list[np.ndarray] = []
+    info: list[dict] = []
+
+    if model is None or data is None:
+        print("Skipping GT blocker injection: available only in MuJoCo mode.")
+        return masks, info
+
+    if not geom_names:
+        print("GT blocker mode enabled, but no geom names were provided.")
+        return masks, info
+
+    print("\n--- DEBUG ORACLE BLOCKER INJECTION ---")
+    for geom_name in geom_names:
+        mask, reason = try_geom_box_to_voxel_mask(
+            model=model,
+            data=data,
+            grid=grid,
+            geom_name=geom_name,
+            pad=pad,
+        )
+
+        if mask is None:
+            print(f"Skipping GT blocker '{geom_name}': {reason}")
+            continue
+
+        voxels = int(mask.sum())
+        if voxels == 0:
+            print(f"Skipping GT blocker '{geom_name}': empty voxelization")
+            continue
+
+        print(f"Injected GT blocker '{geom_name}': voxels={voxels}")
+        masks.append(mask)
+        info.append(
+            {
+                "geom_name": geom_name,
+                "voxels": voxels,
+                "pad": float(pad),
+            }
+        )
+
+    return masks, info
 
 
 def build_global_workspace_bounds(
@@ -88,6 +204,7 @@ def segmentation_mask_to_world_points(
     table_top_z: float | None = None,
     depth_band_m: float = 0.12,
     table_z_band_m: float = 0.03,
+    use_table_top_filter: bool = False,
 ) -> np.ndarray:
     """
     Convert a 2D segmentation mask into 3D world points using depth,
@@ -96,7 +213,7 @@ def segmentation_mask_to_world_points(
     Strategy:
       1) valid depth only
       2) keep points near mask median depth
-      3) if label is table and table_top_z is known, keep only points near table top plane
+      3) optional table-top plane filter for special debugging only
     """
     ys, xs = np.where(mask_2d > 0)
     if len(xs) == 0:
@@ -115,7 +232,6 @@ def segmentation_mask_to_world_points(
     ys = ys[valid].astype(np.float64)
     z_all = z_all[valid]
 
-    # Robust depth filtering inside the mask
     z_med = float(np.median(z_all))
     keep = np.abs(z_all - z_med) <= depth_band_m
 
@@ -136,8 +252,7 @@ def segmentation_mask_to_world_points(
     for cam_pt in cam_pts:
         world_pt = world_engine.to_world(cam_pt)
 
-        # Extra filtering for known planar support surface
-        if label_norm == "table" and table_top_z is not None:
+        if use_table_top_filter and label_norm == "table" and table_top_z is not None:
             if abs(float(world_pt[2]) - float(table_top_z)) > table_z_band_m:
                 continue
 
@@ -186,6 +301,86 @@ def world_points_to_voxel_mask(
 
     return mask
 
+def keep_largest_connected_component(mask: np.ndarray, connectivity: int = 1) -> np.ndarray:
+    """
+    Keep only the largest connected component of a boolean mask.
+    Works for both 2D and 3D masks.
+    """
+    if not np.any(mask):
+        return mask
+
+    structure = ndimage.generate_binary_structure(mask.ndim, connectivity)
+    labels, num = ndimage.label(mask, structure=structure)
+    if num <= 1:
+        return mask
+
+    counts = np.bincount(labels.ravel())
+    counts[0] = 0
+    largest = int(np.argmax(counts))
+    return labels == largest
+
+
+def build_precise_source_mask(
+    grid: WorkspaceGrid,
+    world_points: np.ndarray,
+    min_component_voxels: int = 30,
+) -> np.ndarray:
+    """
+    Build a tighter source mask for risk emission.
+    Compared with occupancy masks, this avoids overly large hazard footprints.
+    """
+    raw = world_points_to_voxel_mask(
+        grid=grid,
+        world_points=world_points,
+        dilation_iters=0,
+    )
+
+    raw = keep_largest_connected_component(raw, connectivity=1)
+
+    # Fallback if the mask becomes too tiny
+    if int(raw.sum()) < min_component_voxels:
+        raw = world_points_to_voxel_mask(
+            grid=grid,
+            world_points=world_points,
+            dilation_iters=1,
+        )
+        raw = keep_largest_connected_component(raw, connectivity=1)
+
+    return raw
+
+
+def clean_source_surface_mask(surface_mask: np.ndarray) -> np.ndarray:
+    """
+    Clean a top-surface mask by denoising its footprint in 2D,
+    then restoring only the top voxel band from the original surface.
+    """
+    if not np.any(surface_mask):
+        return surface_mask
+
+    footprint = np.any(surface_mask, axis=2)
+    footprint = keep_largest_connected_component(footprint, connectivity=1)
+
+    structure2d = ndimage.generate_binary_structure(2, 1)
+    cleaned_fp = ndimage.binary_opening(footprint, structure=structure2d, iterations=1)
+    cleaned_fp = ndimage.binary_closing(cleaned_fp, structure=structure2d, iterations=1)
+
+    if not np.any(cleaned_fp):
+        cleaned_fp = footprint
+
+    cleaned = np.zeros_like(surface_mask, dtype=bool)
+    nx, ny, _ = surface_mask.shape
+
+    for i in range(nx):
+        for j in range(ny):
+            if not cleaned_fp[i, j]:
+                continue
+            z_idx = np.where(surface_mask[i, j, :])[0]
+            if len(z_idx) == 0:
+                continue
+            z_top = int(z_idx.max())
+            cleaned[i, j, z_top] = True
+
+    return cleaned
 
 def extract_top_surface_mask(
     object_mask: np.ndarray,
@@ -276,10 +471,8 @@ def gravity_column_from_surface_mask(
     if not np.any(footprint):
         return np.zeros(grid.shape, dtype=np.float64)
 
-    # 2D xy distance to the nearest footprint voxel
     d_xy = ndimage.distance_transform_edt(~footprint) * grid.res
 
-    # top z value for each (x, y) footprint column
     z_top_field = np.full(grid.shape[:2], -np.inf, dtype=np.float64)
     nx, ny, _ = top_surface_mask.shape
     for i in range(nx):
@@ -309,22 +502,84 @@ def gravity_column_from_surface_mask(
 def canonicalize_label_for_filter(router: SemanticRouter, label: str) -> str:
     return router._canonicalize_label(label)
 
+def normalize_text_label(text: str) -> str:
+    text = text.lower().strip()
+    text = re.sub(r"[_\-]+", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def token_jaccard(a: str, b: str) -> float:
+    sa = set(normalize_text_label(a).split())
+    sb = set(normalize_text_label(b).split())
+    if not sa and not sb:
+        return 1.0
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / len(sa | sb)
+
+
+def representative_priority(
+    obj: dict,
+    router: SemanticRouter,
+    target_label: str | None = None,
+) -> float:
+    """
+    Higher is better.
+
+    Generic rule:
+    - start with detector confidence
+    - if a target label is specified, prefer candidates whose raw label
+      matches that target more closely
+    - among same-target duplicates, mildly prefer tighter boxes
+    """
+    score = 1000.0 * float(obj.get("score", 0.0))
+
+    if target_label is None or target_label.lower() == "auto":
+        return score
+
+    obj_raw = normalize_text_label(obj["label"])
+    tgt_raw = normalize_text_label(target_label)
+
+    obj_canon = router._canonicalize_label(obj["label"])
+    tgt_canon = router._canonicalize_label(target_label)
+
+    if obj_canon == tgt_canon:
+        # Strong bonus for exact raw label match to the requested target.
+        if obj_raw == tgt_raw:
+            score += 10000.0
+
+        # Bonus for lexical overlap with requested target.
+        score += 1000.0 * token_jaccard(obj_raw, tgt_raw)
+
+        # Mild bonus for more specific labels (more words).
+        score += 100.0 * min(len(obj_raw.split()), 4)
+
+        # Mild penalty for overly large boxes among same canonical target.
+        box = obj["box_2d"]
+        area = max(1, (box["xmax"] - box["xmin"]) * (box["ymax"] - box["ymin"]))
+        score -= 0.001 * float(area)
+
+    return score
 
 def dedupe_object_infos_by_canonical_label_and_geometry(
     object_infos: list[dict],
     router: SemanticRouter,
     point_dist_thresh: float = 0.03,
     bbox_iou_thresh: float = 0.25,
+    target_label: str | None = None,
 ) -> list[dict]:
     """
     Dedupe objects after 3D localization.
 
-    Keep the highest-score object among entries that:
+    Keep one representative among entries that:
     - share the same canonical label
     - and are geometrically almost the same object
 
-    This is better than raw 2D IoU because nested detections like
-    'drill' and 'power drill' may have low IoU but identical 3D centers.
+    Representative choice is generic:
+    - detector score
+    - optional target-label match quality
+    - mild preference for tighter boxes among same target duplicates
     """
     if not object_infos:
         return []
@@ -360,7 +615,13 @@ def dedupe_object_infos_by_canonical_label_and_geometry(
         inner_area = max(1, (inner["xmax"] - inner["xmin"]) * (inner["ymax"] - inner["ymin"]))
         return inter / inner_area
 
-    object_infos = sorted(object_infos, key=lambda o: float(o["score"]), reverse=True)
+    # IMPORTANT: sort by representative priority, not raw score only
+    object_infos = sorted(
+        object_infos,
+        key=lambda o: representative_priority(o, router, target_label=target_label),
+        reverse=True,
+    )
+
     kept = []
 
     for obj in object_infos:
@@ -398,6 +659,211 @@ def dedupe_object_infos_by_canonical_label_and_geometry(
 
     return kept
 
+def compute_axis_occlusion_caps(
+    grid: WorkspaceGrid,
+    source_mask: np.ndarray,
+    occupancy_free: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """
+    Compute hard axis-aligned occlusion caps for all 6 directions:
+      w_+x, w_-x, w_+y, w_-y, w_+z, w_-z
+
+    For each axis ray starting from the source extent, find the first obstacle.
+    Everything beyond that first obstacle along that axis is masked out.
+
+    Returns:
+      dict[str, bool array] with same shape as grid.shape
+    """
+    nx, ny, nz = source_mask.shape
+    caps = {}
+
+    # ------------------------------------------------------------
+    # +X / -X  (support plane: y,z)
+    # ------------------------------------------------------------
+    support_yz = np.any(source_mask, axis=0)  # (ny, nz)
+    max_x_idx = np.full((ny, nz), -1, dtype=int)
+    min_x_idx = np.full((ny, nz), nx, dtype=int)
+
+    for j in range(ny):
+        for k in range(nz):
+            xs = np.where(source_mask[:, j, k])[0]
+            if len(xs) > 0:
+                min_x_idx[j, k] = int(xs.min())
+                max_x_idx[j, k] = int(xs.max())
+
+    plus_x_block = np.full((ny, nz), np.inf, dtype=np.float64)
+    minus_x_block = np.full((ny, nz), -np.inf, dtype=np.float64)
+
+    for j in range(ny):
+        for k in range(nz):
+            if not support_yz[j, k]:
+                continue
+
+            # +x
+            start = max_x_idx[j, k] + 1
+            if start < nx:
+                blocked = np.where(~occupancy_free[start:, j, k])[0]
+                if len(blocked) > 0:
+                    first_idx = start + int(blocked[0])
+                    plus_x_block[j, k] = float(grid.x[first_idx])
+
+            # -x
+            stop = min_x_idx[j, k] - 1
+            if stop >= 0:
+                blocked = np.where(~occupancy_free[:min_x_idx[j, k], j, k])[0]
+                if len(blocked) > 0:
+                    first_idx = int(blocked[-1])  # closest blocker on negative side
+                    minus_x_block[j, k] = float(grid.x[first_idx])
+
+    if np.any(support_yz):
+        _, nearest_idx = ndimage.distance_transform_edt(~support_yz, return_indices=True)
+        nearest_j = nearest_idx[0]
+        nearest_k = nearest_idx[1]
+
+        plus_x_inherited = plus_x_block[nearest_j, nearest_k]       # (ny, nz)
+        minus_x_inherited = minus_x_block[nearest_j, nearest_k]    # (ny, nz)
+
+        caps["w_+x"] = grid.X < plus_x_inherited[None, :, :]
+        caps["w_-x"] = grid.X > minus_x_inherited[None, :, :]
+    else:
+        caps["w_+x"] = np.ones(grid.shape, dtype=bool)
+        caps["w_-x"] = np.ones(grid.shape, dtype=bool)
+
+    # ------------------------------------------------------------
+    # +Y / -Y  (support plane: x,z)
+    # ------------------------------------------------------------
+    support_xz = np.any(source_mask, axis=1)  # (nx, nz)
+    max_y_idx = np.full((nx, nz), -1, dtype=int)
+    min_y_idx = np.full((nx, nz), ny, dtype=int)
+
+    for i in range(nx):
+        for k in range(nz):
+            ys = np.where(source_mask[i, :, k])[0]
+            if len(ys) > 0:
+                min_y_idx[i, k] = int(ys.min())
+                max_y_idx[i, k] = int(ys.max())
+
+    plus_y_block = np.full((nx, nz), np.inf, dtype=np.float64)
+    minus_y_block = np.full((nx, nz), -np.inf, dtype=np.float64)
+
+    for i in range(nx):
+        for k in range(nz):
+            if not support_xz[i, k]:
+                continue
+
+            # +y
+            start = max_y_idx[i, k] + 1
+            if start < ny:
+                blocked = np.where(~occupancy_free[i, start:, k])[0]
+                if len(blocked) > 0:
+                    first_idx = start + int(blocked[0])
+                    plus_y_block[i, k] = float(grid.y[first_idx])
+
+            # -y
+            if min_y_idx[i, k] > 0:
+                blocked = np.where(~occupancy_free[i, :min_y_idx[i, k], k])[0]
+                if len(blocked) > 0:
+                    first_idx = int(blocked[-1])
+                    minus_y_block[i, k] = float(grid.y[first_idx])
+
+    if np.any(support_xz):
+        _, nearest_idx = ndimage.distance_transform_edt(~support_xz, return_indices=True)
+        nearest_i = nearest_idx[0]
+        nearest_k = nearest_idx[1]
+
+        plus_y_inherited = plus_y_block[nearest_i, nearest_k]       # (nx, nz)
+        minus_y_inherited = minus_y_block[nearest_i, nearest_k]     # (nx, nz)
+
+        caps["w_+y"] = grid.Y < plus_y_inherited[:, None, :]
+        caps["w_-y"] = grid.Y > minus_y_inherited[:, None, :]
+    else:
+        caps["w_+y"] = np.ones(grid.shape, dtype=bool)
+        caps["w_-y"] = np.ones(grid.shape, dtype=bool)
+
+    # ------------------------------------------------------------
+    # +Z / -Z  (support plane: x,y)
+    # ------------------------------------------------------------
+    support_xy = np.any(source_mask, axis=2)  # (nx, ny)
+    max_z_idx = np.full((nx, ny), -1, dtype=int)
+    min_z_idx = np.full((nx, ny), nz, dtype=int)
+
+    for i in range(nx):
+        for j in range(ny):
+            zs = np.where(source_mask[i, j, :])[0]
+            if len(zs) > 0:
+                min_z_idx[i, j] = int(zs.min())
+                max_z_idx[i, j] = int(zs.max())
+
+    plus_z_block = np.full((nx, ny), np.inf, dtype=np.float64)
+    minus_z_block = np.full((nx, ny), -np.inf, dtype=np.float64)
+
+    for i in range(nx):
+        for j in range(ny):
+            if not support_xy[i, j]:
+                continue
+
+            # +z
+            start = max_z_idx[i, j] + 1
+            if start < nz:
+                blocked = np.where(~occupancy_free[i, j, start:])[0]
+                if len(blocked) > 0:
+                    first_idx = start + int(blocked[0])
+                    plus_z_block[i, j] = float(grid.z[first_idx])
+
+            # -z
+            if min_z_idx[i, j] > 0:
+                blocked = np.where(~occupancy_free[i, j, :min_z_idx[i, j]])[0]
+                if len(blocked) > 0:
+                    first_idx = int(blocked[-1])
+                    minus_z_block[i, j] = float(grid.z[first_idx])
+
+    if np.any(support_xy):
+        _, nearest_idx = ndimage.distance_transform_edt(~support_xy, return_indices=True)
+        nearest_i = nearest_idx[0]
+        nearest_j = nearest_idx[1]
+
+        plus_z_inherited = plus_z_block[nearest_i, nearest_j]       # (nx, ny)
+        minus_z_inherited = minus_z_block[nearest_i, nearest_j]     # (nx, ny)
+
+        caps["w_+z"] = grid.Z < plus_z_inherited[:, :, None]
+        caps["w_-z"] = grid.Z > minus_z_inherited[:, :, None]
+    else:
+        caps["w_+z"] = np.ones(grid.shape, dtype=bool)
+        caps["w_-z"] = np.ones(grid.shape, dtype=bool)
+
+    return caps
+
+def select_axis_occlusion_cap(
+    axis_caps: dict[str, np.ndarray],
+    risk_params: dict,
+) -> np.ndarray:
+    """
+    Select or combine axis-aligned occlusion caps based on topology + weights.
+
+    Strategy:
+    - upward_vertical_cone: use +z cap
+    - forward_directional_cone: use dominant horizontal axis cap
+    - planar_half_space: use dominant axis cap
+    - isotropic_sphere: do not hard-cap by default (keep soft geodesic attenuation only)
+    """
+    topology = risk_params.get("topology_template", "isotropic_sphere")
+    weights = risk_params.get("weights", {})
+
+    if topology == "upward_vertical_cone":
+        return axis_caps["w_+z"]
+
+    if topology == "forward_directional_cone":
+        horiz_keys = ["w_+x", "w_-x", "w_+y", "w_-y"]
+        dominant = max(horiz_keys, key=lambda k: float(weights.get(k, 0.0)))
+        return axis_caps[dominant]
+
+    if topology == "planar_half_space":
+        all_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
+        dominant = max(all_keys, key=lambda k: float(weights.get(k, 0.0)))
+        return axis_caps[dominant]
+
+    # isotropic_sphere: keep hard cap disabled by default
+    return np.ones_like(next(iter(axis_caps.values())), dtype=bool)
 
 # ----------------------------------------------------------------------
 # Visualization helpers
@@ -412,14 +878,13 @@ def draw_segmentation_by_attenuation(
 ):
     """
     Color each object's 2D segmentation by receptacle_attenuation.
-    Lower attenuation -> cooler/less intense.
-    Higher attenuation -> hotter/more intense.
     """
     canvas = bgr_image.copy()
 
     for obj in object_infos:
         mask = obj.get("mask_2d", None)
-        risk_params = obj.get("risk_params", {})
+        risk_params = obj.get("risk_params", None)
+
         if mask is None or risk_params is None:
             continue
 
@@ -427,11 +892,10 @@ def draw_segmentation_by_attenuation(
         att = float(np.clip(att, 0.1, 1.0))
         t = (att - 0.1) / 0.9
 
-        # BGR: blue -> red
         color = np.array([
-            int(255 * (1.0 - t)),   # B
-            int(180 * (1.0 - t)),   # G
-            int(255 * t),           # R
+            int(255 * (1.0 - t)),
+            int(180 * (1.0 - t)),
+            int(255 * t),
         ], dtype=np.uint8)
 
         alpha = alpha_min + (alpha_max - alpha_min) * t
@@ -572,6 +1036,175 @@ def project_and_render_overlay(
     print(f"Saved overlay to '{output_path}'.")
 
 
+def geom_box_to_voxel_mask(
+    model,
+    data,
+    grid: WorkspaceGrid,
+    geom_name: str,
+    pad: float = 0.0,
+) -> np.ndarray:
+    """
+    Convert a MuJoCo box geom into a voxel mask on the current WorkspaceGrid.
+
+    Works for arbitrarily rotated box geoms using geom_xpos / geom_xmat.
+    """
+    geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
+    if geom_id < 0:
+        raise ValueError(f"Could not find geom '{geom_name}'.")
+
+    geom_type = model.geom_type[geom_id]
+    if geom_type != mujoco.mjtGeom.mjGEOM_BOX:
+        raise ValueError(f"geom '{geom_name}' is not a box geom.")
+
+    center = data.geom_xpos[geom_id].copy()                  # (3,)
+    rot = data.geom_xmat[geom_id].reshape(3, 3).copy()      # local -> world
+    half = model.geom_size[geom_id].copy() + pad            # (3,)
+
+    pts = np.stack(
+        [
+            grid.X - center[0],
+            grid.Y - center[1],
+            grid.Z - center[2],
+        ],
+        axis=-1,
+    )  # (..., 3)
+
+    # world delta -> local delta
+    local = pts @ rot
+
+    mask = (
+        (np.abs(local[..., 0]) <= half[0]) &
+        (np.abs(local[..., 1]) <= half[1]) &
+        (np.abs(local[..., 2]) <= half[2])
+    )
+    return mask
+
+def print_final_risk_profiles(
+    grid: WorkspaceGrid,
+    d_euc: np.ndarray,
+    d_geo: np.ndarray,
+    A_field: np.ndarray,
+    hard_axis_cap: np.ndarray,
+    V_object: np.ndarray,
+    occupancy_free: np.ndarray,
+    center_world_pt: np.ndarray,
+    offsets=(0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28),
+    title: str = "FINAL RISK PROFILE",
+):
+    """
+    Print axis-aligned probe profiles that show:
+      - Euclidean distance
+      - Geodesic distance
+      - soft shielding A_field
+      - hard occlusion cap
+      - final capped risk V_object
+      - whether the voxel itself is free/occupied
+
+    This is the most useful end-to-end debug print for understanding
+    why risk survives or disappears behind blockers.
+    """
+    def nearest_idx(arr, value):
+        return int(np.argmin(np.abs(arr - value)))
+
+    cx, cy, cz = center_world_pt
+    axes = {
+        "+x": np.array([1.0, 0.0, 0.0]),
+        "-x": np.array([-1.0, 0.0, 0.0]),
+        "+y": np.array([0.0, 1.0, 0.0]),
+        "-y": np.array([0.0, -1.0, 0.0]),
+        "+z": np.array([0.0, 0.0, 1.0]),
+        "-z": np.array([0.0, 0.0, -1.0]),
+    }
+
+    print(f"\n--- {title} ---")
+    for axis_name, direction in axes.items():
+        print(f"[direction {axis_name}]")
+        for off in offsets:
+            pt = np.array([cx, cy, cz], dtype=np.float64) + off * direction
+
+            ix = nearest_idx(grid.x, pt[0])
+            iy = nearest_idx(grid.y, pt[1])
+            iz = nearest_idx(grid.z, pt[2])
+
+            de = float(d_euc[ix, iy, iz])
+            dg = float(d_geo[ix, iy, iz])
+            af = float(A_field[ix, iy, iz])
+            cap = int(hard_axis_cap[ix, iy, iz])
+            vfinal = float(V_object[ix, iy, iz])
+            free = int(occupancy_free[ix, iy, iz])
+
+            print(
+                f"  off={off:.3f} "
+                f"pt={np.round(pt, 4)} "
+                f"free={free} "
+                f"d_euc={de:.4f} "
+                f"d_geo={dg:.4f} "
+                f"A={af:.4f} "
+                f"cap={cap} "
+                f"V={vfinal:.4f}"
+            )
+
+def save_depth_debug_image(
+    depth_metric: np.ndarray,
+    output_path: str = "test_depth_debug.png",
+):
+    """
+    Save a normalized depth visualization for quick sanity checking.
+    """
+    valid = np.isfinite(depth_metric) & (depth_metric > 0)
+    if not np.any(valid):
+        print("Depth debug: no valid depth values.")
+        return
+
+    vals = depth_metric[valid]
+    d_min = float(vals.min())
+    d_max = float(vals.max())
+    d_med = float(np.median(vals))
+    finite_ratio = float(valid.mean())
+
+    print(
+        f"Depth debug: min={d_min:.4f} max={d_max:.4f} "
+        f"median={d_med:.4f} finite_ratio={finite_ratio:.4f}"
+    )
+
+    lo = float(np.percentile(vals, 2))
+    hi = float(np.percentile(vals, 98))
+    if hi <= lo:
+        hi = lo + 1e-6
+
+    clipped = np.clip(depth_metric, lo, hi)
+    vis = ((clipped - lo) / (hi - lo) * 255.0).astype(np.uint8)
+    vis[~valid] = 0
+    cv2.imwrite(output_path, vis)
+    print(f"Saved depth debug image to '{output_path}'.")
+
+
+def print_mask_depth_stats(
+    mask_2d: np.ndarray,
+    depth_metric: np.ndarray,
+    label: str,
+):
+    """
+    Print quick depth stats inside one detection mask.
+    Useful for checking whether a detected object has coherent depth.
+    """
+    z = depth_metric[mask_2d > 0]
+    z = z[np.isfinite(z) & (z > 0)]
+
+    if z.size == 0:
+        print(f"[DEPTH] {label}: no valid depth")
+        return
+
+    print(
+        f"[DEPTH] {label}: "
+        f"n={z.size} "
+        f"min={float(z.min()):.4f} "
+        f"p10={float(np.percentile(z, 10)):.4f} "
+        f"med={float(np.median(z)):.4f} "
+        f"p90={float(np.percentile(z, 90)):.4f} "
+        f"max={float(z.max()):.4f}"
+    )
+
 # ----------------------------------------------------------------------
 # Main pipeline
 # ----------------------------------------------------------------------
@@ -581,16 +1214,33 @@ def run_pipeline(
     camera_type: str,
     target_label: str = "auto",
     candidate_labels: list[str] | None = None,
+    xml_path: str = "tabletop.xml",
+    use_gt_blockers: bool = False,
+    gt_blocker_geoms: list[str] | None = None,
+    use_table_top_filter: bool = False,
 ):
+    if gt_blocker_geoms is None:
+        gt_blocker_geoms = []
+
+    model = None
+    data = None
+
     print(f"--- INITIALIZING PIPELINE ---")
     print(f"Hardware: [{camera_type.upper()}]")
     print(f"Robot holding: [{manipulated_obj.upper()}]")
-    print(f"Scene target mode: [{target_label.upper()}]\n")
+    print(f"Scene target mode: [{target_label.upper()}]")
+    print(f"XML path: [{xml_path}]")
+    print(f"GT blocker debug mode: [{'ON' if use_gt_blockers else 'OFF'}]\n")
+    print(f"Table-top filter: [{'ON' if use_table_top_filter else 'OFF'}]\n")
 
     table_top_z = None
 
     if camera_type == "Mujoco":
-        model = mujoco.MjModel.from_xml_path("tabletop.xml")
+        xml_file = Path(xml_path)
+        if not xml_file.exists():
+            raise FileNotFoundError(f"MuJoCo XML not found: {xml_path}")
+
+        model = mujoco.MjModel.from_xml_path(str(xml_file))
         data = mujoco.MjData(model)
         for _ in range(50):
             mujoco.mj_step(model, data)
@@ -603,8 +1253,9 @@ def run_pipeline(
         world_pos = data.cam_xpos[cam_id].copy()
         world_mat = data.cam_xmat[cam_id].copy()
 
-        table_top_z = get_mujoco_table_top_z(model, data, geom_name="table")
-        print(f"MuJoCo table top z = {table_top_z:.4f} m")
+        table_top_z = get_optional_mujoco_table_top_z(model, data, geom_name="table")
+        if table_top_z is not None:
+            print(f"MuJoCo table top z = {table_top_z:.4f} m")
 
     elif camera_type == "RealSense":
         from semantic_safety.perception_2d3d.realsense import RealSenseCamera
@@ -625,6 +1276,7 @@ def run_pipeline(
         raise ValueError(f"Unsupported camera_type: {camera_type}")
 
     cv2.imwrite("test_rgb.png", bgr_image)
+    save_depth_debug_image(depth_metric, output_path="test_depth_debug.png")
 
     # ------------------------------------------------------------------
     # 1) Scene perception
@@ -651,15 +1303,15 @@ def run_pipeline(
         return
 
     # ------------------------------------------------------------------
-    # 2) Router init + optional target filtering
+    # 2) Router init + target filtering policy
     # ------------------------------------------------------------------
     router = SemanticRouter(
         json_path="data/semantic_risk_demo.json",
         system_instruction=GEMINI_SYSTEM_INSTRUCTION,
         llm_batch_callback=None,
-        #llm_batch_callback=gemini_batch_callback,
+        # llm_batch_callback=gemini_batch_callback,
         persist_updates=False,
-        #persist_updates=True,
+        # persist_updates=True,
         nearest_threshold=0.68,
         batch_window_s=0.15,
         max_batch_size=8,
@@ -667,43 +1319,46 @@ def run_pipeline(
     )
 
     try:
-        if target_label.lower() != "auto":
-            target_canon = canonicalize_label_for_filter(router, target_label)
-            filtered = [
-                det for det in detections
-                if canonicalize_label_for_filter(router, det["label"]) == target_canon
-            ]
-            if filtered:
-                detections = filtered
-            else:
-                print(f"Warning: target_label='{target_label}' not found after canonicalization. Using all detections.")
+        # IMPORTANT:
+        # Keep all detections for occupancy / blockers.
+        occupancy_detections = list(detections)
 
-        print("\n--- DETECTED SCENE CANDIDATES ---")
-        for det in detections:
+        # Only store the target canonical label for later hazard-source filtering.
+        hazard_target_canon = None
+        if target_label.lower() != "auto":
+            hazard_target_canon = canonicalize_label_for_filter(router, target_label)
+
+        print("\n--- DETECTED SCENE CANDIDATES (ALL FOR OCCUPANCY) ---")
+        for det in occupancy_detections:
             print(f"- {det['label']} ({det['score']:.3f}) box={det['box']}")
 
-        # Warm the cache for unknown labels
+        print("\n--- DETECTION FILTER DEBUG ---")
+        print("target_label:", target_label)
+        print("hazard_target_canon:", hazard_target_canon)
+        print("all detected labels:", [det["label"] for det in occupancy_detections])
+
         router.prefetch_scene_pairs(
             manipulated_label=manipulated_obj,
-            scene_labels=[det["label"] for det in detections],
+            scene_labels=[det["label"] for det in occupancy_detections],
         )
 
         # ------------------------------------------------------------------
-        # 3) 2D -> 3D localization for all detections using segmentation masks
+        # 3) 2D -> 3D localization for all occupancy detections
         # ------------------------------------------------------------------
         world_engine = WorldTransform(world_pos, world_mat)
 
         object_infos = []
-        for det in detections:
+        for det in occupancy_detections:
             box = det["box"]
             mask_2d = det.get("mask", None)
 
             if mask_2d is None:
-                # fallback: use 2D box rectangle if mask is unavailable
                 h, w = depth_metric.shape
                 rect_mask = np.zeros((h, w), dtype=bool)
                 rect_mask[box["ymin"]:box["ymax"], box["xmin"]:box["xmax"]] = True
                 mask_2d = rect_mask
+
+            print_mask_depth_stats(mask_2d, depth_metric, det["label"])
 
             world_points = segmentation_mask_to_world_points(
                 mask_2d=mask_2d,
@@ -714,6 +1369,7 @@ def run_pipeline(
                 table_top_z=table_top_z,
                 depth_band_m=0.12,
                 table_z_band_m=0.03,
+                use_table_top_filter=use_table_top_filter,
             )
 
             if len(world_points) == 0:
@@ -722,15 +1378,14 @@ def run_pipeline(
 
             world_pt = np.mean(world_points, axis=0)
 
-            if len(world_points) > 0:
-                span = world_points.max(axis=0) - world_points.min(axis=0)
-                if span[0] > 2.0 or span[1] > 2.0 or span[2] > 1.0:
-                    print(
-                        f"Skipping '{det['label']}' because voxelization span is implausibly large: "
-                        f"{np.round(span, 3)}"
-                    )
-                    continue
-            
+            span = world_points.max(axis=0) - world_points.min(axis=0)
+            if span[0] > 2.0 or span[1] > 2.0 or span[2] > 1.0:
+                print(
+                    f"Skipping '{det['label']}' because voxelization span is implausibly large: "
+                    f"{np.round(span, 3)}"
+                )
+                continue
+
             object_infos.append(
                 {
                     "label": det["label"],
@@ -755,17 +1410,49 @@ def run_pipeline(
                 f"num_pts={len(obj['world_points'])}, "
                 f"world_pt={np.round(obj['world_pt'], 4)}"
             )
-        
+
         object_infos = dedupe_object_infos_by_canonical_label_and_geometry(
             object_infos=object_infos,
             router=router,
             point_dist_thresh=0.03,
             bbox_iou_thresh=0.25,
+            target_label=(None if target_label.lower() == "auto" else target_label),
         )
 
         print("\n--- AFTER 3D CANONICAL DEDUPE ---")
         for obj in object_infos:
+            rep_score = representative_priority(
+                obj,
+                router,
+                target_label=(None if target_label.lower() == "auto" else target_label),
+            )
+            print(
+                f"- {obj['label']}: "
+                f"world_pt={np.round(obj['world_pt'], 4)}, "
+                f"score={obj['score']:.3f}, "
+                f"rep_priority={rep_score:.2f}"
+            )
+
+        # ------------------------------------------------------------
+        # Split:
+        # - object_infos: all objects for occupancy / blockers
+        # - hazard_object_infos: only objects that should emit risk fields
+        # ------------------------------------------------------------
+        if hazard_target_canon is None:
+            hazard_object_infos = list(object_infos)
+        else:
+            hazard_object_infos = [
+                obj for obj in object_infos
+                if canonicalize_label_for_filter(router, obj["label"]) == hazard_target_canon
+            ]
+
+        print("\n--- HAZARD SOURCE OBJECTS ---")
+        for obj in hazard_object_infos:
             print(f"- {obj['label']}: world_pt={np.round(obj['world_pt'], 4)}, score={obj['score']:.3f}")
+
+        if not hazard_object_infos:
+            print("Warning: no hazard source objects matched target label. Falling back to all objects.")
+            hazard_object_infos = list(object_infos)
 
         # ------------------------------------------------------------------
         # 4) Global voxel workspace
@@ -780,44 +1467,105 @@ def run_pipeline(
         )
         grid = WorkspaceGrid(bounds=bounds, resolution=res)
 
-        object_masks = []
         for obj in object_infos:
-            object_mask = world_points_to_voxel_mask(
+            # Conservative geometry for topology / occupancy / FMM
+            occupancy_mask = world_points_to_voxel_mask(
                 grid=grid,
                 world_points=obj["world_points"],
                 dilation_iters=1,
             )
+            occupancy_mask = keep_largest_connected_component(occupancy_mask, connectivity=1)
 
-            if not np.any(object_mask):
-                print(f"Skipping '{obj['label']}' because voxelized object mask is empty.")
+            if not np.any(occupancy_mask):
+                print(f"Skipping '{obj['label']}' because occupancy mask is empty.")
                 continue
 
-            obj["object_mask"] = object_mask
-            obj["surface_mask"] = extract_top_surface_mask(object_mask, band_voxels=1)
-            obj["bbox_3d"] = voxel_mask_to_bbox(grid, object_mask)
+            occupancy_surface_mask = extract_top_surface_mask(occupancy_mask, band_voxels=1)
+            occupancy_bbox_3d = voxel_mask_to_bbox(grid, occupancy_mask)
 
-            object_masks.append(object_mask)
+            # Precise source surface only for emission shaping
+            source_surface_mask = clean_source_surface_mask(occupancy_surface_mask)
+
+            obj["occupancy_mask"] = occupancy_mask
+            obj["occupancy_surface_mask"] = occupancy_surface_mask
+            obj["occupancy_bbox_3d"] = occupancy_bbox_3d
+            obj["source_surface_mask"] = source_surface_mask
+
+        object_infos = [
+            obj for obj in object_infos
+            if "occupancy_mask" in obj and "source_surface_mask" in obj
+        ]
+        hazard_object_infos = [
+            obj for obj in hazard_object_infos
+            if "occupancy_mask" in obj and "source_surface_mask" in obj
+        ]
 
         print("\n--- OBJECT GEOMETRY DEBUG ---")
         for obj in object_infos:
             print(f"[{obj['label']}]")
-            print(f"  bbox_3d             = {tuple(round(v, 4) for v in obj['bbox_3d'])}")
-            print(f"  num_world_points    = {len(obj['world_points'])}")
-            print(f"  object_voxels       = {int(obj['object_mask'].sum())}")
-            print(f"  surface_voxels      = {int(obj['surface_mask'].sum())}")
-            print(f"  footprint_voxels    = {int(np.any(obj['surface_mask'], axis=2).sum())}")
+            print(f"  occupancy_bbox_3d        = {tuple(round(v, 4) for v in obj['occupancy_bbox_3d'])}")
+            print(f"  num_world_points         = {len(obj['world_points'])}")
+            print(f"  occupancy_voxels         = {int(obj['occupancy_mask'].sum())}")
+            print(f"  occupancy_surface_voxels = {int(obj['occupancy_surface_mask'].sum())}")
+            print(f"  source_surface_voxels    = {int(obj['source_surface_mask'].sum())}")
+            print(f"  source_footprint_voxels  = {int(np.any(obj['source_surface_mask'], axis=2).sum())}")
+
+            if canonicalize_label_for_filter(router, obj["label"]) == "power drill":
+                z_occ = grid.Z[obj["occupancy_surface_mask"]]
+                z_src = grid.Z[obj["source_surface_mask"]]
+                if z_occ.size > 0:
+                    print(f"  occupancy surface z range = {z_occ.min():.4f} .. {z_occ.max():.4f}")
+                if z_src.size > 0:
+                    print(f"  source surface z range    = {z_src.min():.4f} .. {z_src.max():.4f}")
         print("--- END DEBUG ---")
 
-        object_infos = [obj for obj in object_infos if "object_mask" in obj]
         if not object_infos:
             print("No valid voxelized objects remained.")
             return
 
+        occupancy_masks = [obj["occupancy_mask"] for obj in object_infos]
+        gt_blocker_info = []
+
+        if use_gt_blockers:
+            gt_masks, gt_blocker_info = collect_debug_gt_blocker_masks(
+                model=model,
+                data=data,
+                grid=grid,
+                geom_names=gt_blocker_geoms,
+                pad=0.0,
+            )
+            occupancy_masks.extend(gt_masks)
+
         occupancy_free = build_multi_object_occupancy(
             grid=grid,
-            object_masks=[obj["object_mask"] for obj in object_infos],
+            object_masks=occupancy_masks,
             table_top_z=table_top_z,
         )
+
+        print("\n--- OCCUPANCY DEBUG ---")
+        print("occupancy_free fraction:", float(occupancy_free.mean()))
+
+        print("occupancy objects:")
+        for obj in object_infos:
+            print(
+                f"  - {obj['label']}: "
+                f"occupancy_voxels={int(obj['occupancy_mask'].sum())}, "
+                f"occupancy_surface_voxels={int(obj['occupancy_surface_mask'].sum())}"
+            )
+
+        print("hazard source objects:")
+        for obj in hazard_object_infos:
+            print(
+                f"  - {obj['label']}: "
+                f"occupancy_voxels={int(obj['occupancy_mask'].sum())}, "
+                f"source_surface_voxels={int(obj['source_surface_mask'].sum())}, "
+                f"source_footprint_voxels={int(np.any(obj['source_surface_mask'], axis=2).sum())}"
+            )
+
+        if use_gt_blockers:
+            print("debug oracle blocker geoms:")
+            for row in gt_blocker_info:
+                print(f"  - {row['geom_name']}: obstacle_voxels={row['voxels']}")
 
         # ------------------------------------------------------------------
         # 5) Per-object risk field generation
@@ -827,7 +1575,10 @@ def run_pipeline(
 
         print("\n--- RISK FIELD DEBUG ---")
 
-        for obj in object_infos:
+        def nearest_idx(arr, value):
+            return int(np.argmin(np.abs(arr - value)))
+
+        for obj in hazard_object_infos:
             risk_params = router.get_risk_parameters(manipulated_obj, obj["label"])
             obj["risk_params"] = risk_params
 
@@ -835,11 +1586,50 @@ def run_pipeline(
             obj["scene_role"] = scene_role
 
             d_euc, d_geo, seed_mask = grid.compute_boundary_seeded_distances(
-                object_mask=obj["object_mask"],
+                object_mask=obj["occupancy_mask"],
                 occupancy_grid=occupancy_free,
                 connectivity=1,
             )
             A_field = shielding_ratio(d_geo, d_euc)
+
+            axis_caps = compute_axis_occlusion_caps(
+                grid=grid,
+                source_mask=obj["occupancy_mask"],
+                occupancy_free=occupancy_free,
+            )
+
+            hard_axis_cap = select_axis_occlusion_cap(
+                axis_caps=axis_caps,
+                risk_params=risk_params,
+            )
+
+            print("\n--- AXIS OCCLUSION CAP DEBUG ---")
+            print("allowed fraction:", float(hard_axis_cap.mean()))
+            print("blocked fraction:", 1.0 - float(hard_axis_cap.mean()))
+
+            if canonicalize_label_for_filter(router, obj["label"]) == "power drill":
+                cx, cy, cz = obj["world_pt"]
+
+                probes = [
+                    ("drill_above", np.array([cx, cy, cz + 0.22], dtype=np.float64)),
+                    ("right_open",  np.array([cx + 0.18, cy, cz + 0.22], dtype=np.float64)),
+                    ("left_open",   np.array([cx - 0.18, cy, cz + 0.22], dtype=np.float64)),
+                ]
+
+                print("\n--- SHIELDING PROBE DEBUG ---")
+                for name, pt in probes:
+                    ix = nearest_idx(grid.x, pt[0])
+                    iy = nearest_idx(grid.y, pt[1])
+                    iz = nearest_idx(grid.z, pt[2])
+
+                    de = float(d_euc[ix, iy, iz])
+                    dg = float(d_geo[ix, iy, iz])
+                    af = float(A_field[ix, iy, iz])
+
+                    print(
+                        f"[{name}] pt={np.round(pt, 4)} "
+                        f"d_euc={de:.4f} d_geo={dg:.4f} A={af:.4f}"
+                    )
 
             gamma = float(risk_params.get("receptacle_attenuation", 1.0))
             base_risk = 100.0 * gamma
@@ -850,22 +1640,26 @@ def run_pipeline(
                 d_geo=d_geo,
                 A_field=A_field,
                 base_risk=base_risk,
-                bbox=obj["bbox_3d"],
-                object_mask=obj["object_mask"],
-                surface_mask=obj["surface_mask"],
-                footprint_mask=np.any(obj["surface_mask"], axis=2),
+                bbox=obj["occupancy_bbox_3d"],
+                object_mask=obj["occupancy_mask"],
+                surface_mask=obj["occupancy_surface_mask"],
+                footprint_mask=np.any(obj["occupancy_surface_mask"], axis=2),
             )
 
+            # hard directional shadow cap
+            V_object = V_object * hard_axis_cap.astype(np.float64)
+
             if risk_params.get("vertical_rule", "standard_decay") == "gravity_column":
-                weights = risk_params.get("weights", {})
                 V_surface = gravity_column_from_surface_mask(
                     grid=grid,
-                    top_surface_mask=obj["surface_mask"],
+                    top_surface_mask=obj["source_surface_mask"],
                     A_field=A_field,
                     base_risk=base_risk,
-                    w_plus_z=float(weights.get("w_+z", 0.0)),
+                    w_plus_z=float(risk_params.get("weights", {}).get("w_+z", 0.0)),
                     lateral_decay=risk_params.get("lateral_decay", "moderate"),
                 )
+
+                V_surface = V_surface * hard_axis_cap.astype(np.float64)
                 V_object = np.maximum(V_object, V_surface)
 
             obj["d_euc"] = d_euc
@@ -880,14 +1674,15 @@ def run_pipeline(
             print(f"  scene_role          = {scene_role}")
             print(f"  attenuation         = {risk_params.get('receptacle_attenuation')}")
             print(f"  weights             = {risk_params.get('weights')}")
-            print(f"  object_voxels       = {int(obj['object_mask'].sum())}")
-            print(f"  surface_voxels      = {int(obj['surface_mask'].sum())}")
-            print(f"  footprint_voxels    = {int(np.any(obj['surface_mask'], axis=2).sum())}")
+            print(f"  occupancy_voxels       = {int(obj['occupancy_mask'].sum())}")
+            #print(f"  source_voxels           = {int(obj['source_mask'].sum())}")
+            print(f"  source_surface_voxels   = {int(obj['source_surface_mask'].sum())}")
+            print(f"  source_footprint_voxels = {int(np.any(obj['source_surface_mask'], axis=2).sum())}")
             print(f"  frac > 5            = {float((V_object > 5.0).mean()):.4f}")
             print(f"  frac > 10           = {float((V_object > 10.0).mean()):.4f}")
 
             if risk_params.get("vertical_rule", "standard_decay") == "gravity_column":
-                z_vals = grid.Z[obj["surface_mask"]]
+                z_vals = grid.Z[obj["source_surface_mask"]]
                 if z_vals.size > 0:
                     print(f"  top surface z range = {z_vals.min():.4f} .. {z_vals.max():.4f}")
 
@@ -896,12 +1691,44 @@ def run_pipeline(
             else:
                 print(f"  -> not added to hazard superposition (scene_role={scene_role})")
 
+            selected_cap_direction = "none"
+            topology = risk_params.get("topology_template", "isotropic_sphere")
+            weights = risk_params.get("weights", {})
+
+            if topology == "upward_vertical_cone":
+                selected_cap_direction = "w_+z"
+            elif topology == "forward_directional_cone":
+                horiz_keys = ["w_+x", "w_-x", "w_+y", "w_-y"]
+                selected_cap_direction = max(horiz_keys, key=lambda k: float(weights.get(k, 0.0)))
+            elif topology == "planar_half_space":
+                all_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
+                selected_cap_direction = max(all_keys, key=lambda k: float(weights.get(k, 0.0)))
+
+            print("\n--- AXIS OCCLUSION CAP DEBUG ---")
+            print("selected_cap_direction:", selected_cap_direction)
+            print("allowed fraction:", float(hard_axis_cap.mean()))
+            print("blocked fraction:", 1.0 - float(hard_axis_cap.mean()))
+
+            print_final_risk_profiles(
+                grid=grid,
+                d_euc=d_euc,
+                d_geo=d_geo,
+                A_field=A_field,
+                hard_axis_cap=hard_axis_cap,
+                V_object=V_object,
+                occupancy_free=occupancy_free,
+                center_world_pt=obj["world_pt"],
+                offsets=(0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32),
+                title=f"FINAL RISK PROFILE | {obj['label']}",
+            )
+
+
             per_object_debug.append(
                 {
                     "label": obj["label"],
                     "scene_role": scene_role,
                     "world_pt": obj["world_pt"].tolist(),
-                    "bbox_3d": list(obj["bbox_3d"]),
+                    "bbox_3d": list(obj["occupancy_bbox_3d"]),
                     "num_world_points": int(len(obj["world_points"])),
                     "risk_params": risk_params,
                     "max_risk": float(np.max(V_object)),
@@ -926,7 +1753,10 @@ def run_pipeline(
             {
                 "manipulated_obj": manipulated_obj,
                 "camera_type": camera_type,
+                "xml_path": xml_path,
                 "target_label_mode": target_label,
+                "debug_oracle_blockers_enabled": bool(use_gt_blockers),
+                "debug_oracle_blockers": gt_blocker_info,
                 "detected_objects": per_object_debug,
             },
             ensure_ascii=False,
@@ -953,7 +1783,7 @@ def run_pipeline(
         # ------------------------------------------------------------------
         draw_segmentation_by_attenuation(
             bgr_image=bgr_image,
-            object_infos=object_infos,
+            object_infos=hazard_object_infos,
             output_path="segmentation_attenuation_overlay.png",
         )
 
@@ -995,6 +1825,12 @@ if __name__ == "__main__":
     parser.add_argument("--manipulated", type=str, default="cup of water")
     parser.add_argument("--camera", type=str, default="Mujoco")
     parser.add_argument(
+        "--xml-path",
+        type=str,
+        default="tabletop.xml",
+        help="MuJoCo XML path, e.g. tabletop.xml or tabletop_shelf.xml",
+    )
+    parser.add_argument(
         "--scene-label",
         type=str,
         default="auto",
@@ -1006,6 +1842,22 @@ if __name__ == "__main__":
         default=None,
         help="Optional candidate label vocabulary for open-vocabulary detection.",
     )
+    parser.add_argument(
+        "--use-gt-blockers",
+        action="store_true",
+        help="Optional debug/oracle mode only. Inject specific MuJoCo geoms into occupancy.",
+    )
+    parser.add_argument(
+        "--gt-blocker-geoms",
+        nargs="*",
+        default=[],
+        help="Optional MuJoCo geom names for debug/oracle blocker injection. Missing geoms are skipped.",
+    )
+    parser.add_argument(
+        "--use-table-top-filter",
+        action="store_true",
+        help="Optional debug filter only. Restrict detections labeled 'table' to the MuJoCo table-top plane.",
+    )
     args = parser.parse_args()
 
     run_pipeline(
@@ -1013,4 +1865,8 @@ if __name__ == "__main__":
         camera_type=args.camera,
         target_label=args.scene_label,
         candidate_labels=args.candidate_labels,
+        xml_path=args.xml_path,
+        use_gt_blockers=args.use_gt_blockers,
+        gt_blocker_geoms=args.gt_blocker_geoms,
+        use_table_top_filter=args.use_table_top_filter,
     )
