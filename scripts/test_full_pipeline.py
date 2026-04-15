@@ -30,6 +30,57 @@ try:
 except Exception:
     gemini_batch_callback = None
 
+# ----------------------------------------------------------------------
+# JSON Object Loader Helpers
+# ----------------------------------------------------------------------
+def load_scene_candidates_from_prior(json_path: str, manipulated_obj: str) -> list[str]:
+    with open(json_path, "r", encoding="utf-8") as f:
+        rows = json.load(f)
+
+    manipulated_norm = manipulated_obj.strip().lower()
+    labels = []
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        manip = str(row.get("manipulated", "")).strip().lower()
+        scene = str(row.get("scene", "")).strip()
+        if manip == manipulated_norm and scene:
+            labels.append(scene)
+
+    # preserve order + dedupe
+    seen = set()
+    out = []
+    for x in labels:
+        key = x.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(x)
+    return out
+
+def build_candidate_labels(
+    manipulated_obj: str,
+    target_label: str,
+    user_candidate_labels: list[str] | None,
+    prior_json_path: str,
+) -> tuple[list[str], list[str]]:
+    prior_scenes = load_scene_candidates_from_prior(prior_json_path, manipulated_obj)
+
+    pass1 = []
+    if target_label.lower() != "auto":
+        pass1.append(target_label)
+    pass1.extend(prior_scenes)
+
+    # dedupe
+    seen = set()
+    pass1 = [x for x in pass1 if not (x.lower() in seen or seen.add(x.lower()))]
+
+    if user_candidate_labels:
+        pass2 = pass1 + [x for x in user_candidate_labels if x.lower() not in seen]
+    else:
+        pass2 = pass1
+
+    return pass1, pass2
 
 # ----------------------------------------------------------------------
 # Geometry helpers
