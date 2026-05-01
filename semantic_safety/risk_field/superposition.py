@@ -10,22 +10,20 @@ import numpy as np
 from scipy.special import logsumexp
 
 
-def shielding_ratio(
-    d_geo: np.ndarray,
-    d_euc: np.ndarray,
-    kappa: float = 2.0,
-    eps: float = 1e-6,
-) -> np.ndarray:
-    """
-    A(x) = (d_geo / (d_euc + ε))^κ.
-    When d_geo ≈ d_euc (line of sight), A ≈ 1. When d_geo >> d_euc (occluded), A >> 1 then we use
-    min(A, 1) or 1/A in cost so that shielded risk is reduced. Proposal: risk scaled by smooth
-    factor; "dimmer" so we want A in (0,1]. So use A = (d_euc / (d_geo + ε))^κ so that
-    unshielded (d_geo ≈ d_euc) → A ≈ 1, shielded (d_geo >> d_euc) → A ≪ 1.
-    """
-    ratio = (d_euc + eps) / (d_geo + eps)
-    A = np.clip(ratio, 0.0, 1.0) ** kappa
-    return A
+def shielding_ratio(d_geo: np.ndarray, d_euc: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    num = d_euc + eps
+    den = d_geo + eps
+
+    ratio = np.divide(
+        num,
+        den,
+        out=np.zeros_like(d_euc, dtype=np.float64),
+        where=np.isfinite(num) & np.isfinite(den),
+    )
+
+    ratio = np.clip(ratio, 0.0, 1.0)
+    ratio[~np.isfinite(ratio)] = 0.0
+    return ratio
 
 
 def risk_cost_field(
@@ -72,3 +70,35 @@ def compute_logsumexp_superposition(
     v_final_capped = np.clip(v_final, a_min=0.0, a_max=v_max)
 
     return v_final_capped
+
+def compute_hybrid_superposition(
+    hazard_fields: list[np.ndarray],
+    beta: float = 6.0,
+    v_max: float = 120.0,
+    additive_scale: float = 0.15,
+) -> np.ndarray:
+    if not hazard_fields:
+        raise ValueError("Cannot superpose an empty list of hazard fields.")
+
+    stacked = np.stack(hazard_fields, axis=0)
+
+    # smooth-max core
+    lse = (1.0 / beta) * logsumexp(beta * stacked, axis=0)
+
+    # small overlap bonus above the max
+    max_field = np.max(stacked, axis=0)
+    overlap_bonus = additive_scale * np.clip(np.sum(stacked, axis=0) - max_field, 0.0, None)
+
+    v_final = lse + overlap_bonus
+    return np.clip(v_final, 0.0, v_max)
+
+def compute_sum_superposition(
+    hazard_fields: list[np.ndarray],
+    v_max: float = 300.0,
+) -> np.ndarray:
+    if not hazard_fields:
+        raise ValueError("Cannot superpose an empty list of hazard fields.")
+
+    stacked = np.stack(hazard_fields, axis=0)
+    v_final = np.sum(stacked, axis=0)
+    return np.clip(v_final, 0.0, v_max)

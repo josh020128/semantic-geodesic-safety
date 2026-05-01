@@ -1,0 +1,2114 @@
+[
+    {
+        "manipulated": "cup of water",
+        "scene": "cup of water",
+        "families": [
+            "liquid"
+        ],
+        "scene_role": "safe_receptacle",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "kitchen knife",
+        "families": [],
+        "scene_role": "safe_receptacle",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.08,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "hot soldering iron",
+        "families": [
+            "liquid",
+            "thermal",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.9,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "laptop",
+        "families": [
+            "liquid",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 1.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.17,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "mug",
+        "families": [],
+        "scene_role": "safe_receptacle",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.15,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.08,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "bowl",
+        "families": [],
+        "scene_role": "safe_receptacle",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.08,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "soccer ball",
+        "families": [
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.2
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "power drill",
+        "families": [
+            "liquid",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 1.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.17,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "bleach cleanser",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.5,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "cup of water",
+        "families": [
+            "sharp",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "kitchen knife",
+        "families": [
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "hot soldering iron",
+        "families": [
+            "sharp",
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "laptop",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.7,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "mug",
+        "families": [
+            "sharp",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "bowl",
+        "families": [
+            "sharp",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "soccer ball",
+        "families": [
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "power drill",
+        "families": [
+            "sharp",
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "bleach cleanser",
+        "families": [
+            "sharp",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "cup of water",
+        "families": [
+            "thermal",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "kitchen knife",
+        "families": [
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.08,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal",
+            "electrical",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "laptop",
+        "families": [
+            "thermal",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.6,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "mug",
+        "families": [
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "bowl",
+        "families": [
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "soccer ball",
+        "families": [
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "power drill",
+        "families": [
+            "thermal",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.2,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "bleach cleanser",
+        "families": [
+            "thermal",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "kitchen knife",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal",
+            "electrical",
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "laptop",
+        "families": [
+            "impact",
+            "electrical",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.2,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "mug",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "bowl",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "soccer ball",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "power drill",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "bleach cleanser",
+        "families": [
+            "impact",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "mug",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "mug",
+        "scene": "kitchen knife",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "mug",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "mug",
+        "scene": "laptop",
+        "families": [
+            "liquid",
+            "electrical",
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.9,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "mug",
+        "scene": "mug",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "mug",
+        "scene": "bowl",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "mug",
+        "scene": "soccer ball",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.2
+    },
+    {
+        "manipulated": "mug",
+        "scene": "power drill",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "mug",
+        "scene": "bleach cleanser",
+        "families": [
+            "impact",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "mug",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "mug",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "kitchen knife",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "hot soldering iron",
+        "families": [
+            "thermal",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "laptop",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.8,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "mug",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "bowl",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.5,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "soccer ball",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.2
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "power drill",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "bleach cleanser",
+        "families": [
+            "impact",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.5,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "low",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "kitchen knife",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "thermal",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "laptop",
+        "families": [
+            "impact",
+            "electrical",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.9,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.25,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "low",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "mug",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "bowl",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "soccer ball",
+        "families": [
+            "impact"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.3
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "power drill",
+        "families": [
+            "impact",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "bleach cleanser",
+        "families": [
+            "impact",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "cup of water",
+        "families": [
+            "impact",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "kitchen knife",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "hot soldering iron",
+        "families": [
+            "impact",
+            "thermal",
+            "electrical"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "laptop",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.8,
+            "w_-x": 0.8,
+            "w_+y": 0.8,
+            "w_-y": 0.8,
+            "w_+z": 0.6,
+            "w_-z": 0.3
+        },
+        "radius_m": 0.2,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "mug",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "bowl",
+        "families": [
+            "impact",
+            "fragile"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "soccer ball",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.6
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "power drill",
+        "families": [
+            "impact",
+            "sharp"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.5
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "bleach cleanser",
+        "families": [
+            "impact",
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.5,
+            "w_-z": 0.2
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "cup of water",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.8,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "kitchen knife",
+        "families": [
+            "contamination",
+            "liquid"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "hot soldering iron",
+        "families": [
+            "liquid",
+            "contamination",
+            "thermal"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.7,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "laptop",
+        "families": [
+            "liquid",
+            "electrical",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.9,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.18,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 1.0
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "mug",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.7,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.8
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "bowl",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.6,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "high",
+        "receptacle_attenuation": 0.7
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "soccer ball",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.12,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "power drill",
+        "families": [
+            "liquid",
+            "electrical",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "upward_vertical_cone",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.8,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.15,
+        "vertical_rule": "gravity_column",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.9
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "bleach cleanser",
+        "families": [
+            "liquid",
+            "contamination"
+        ],
+        "scene_role": "hazard_target",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "radius_m": 0.1,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.4
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "table",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "shelf",
+        "families": [],
+        "scene_role": "support_context",
+        "topology_template": "isotropic_sphere",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "radius_m": 0.0,
+        "vertical_rule": "standard_decay",
+        "lateral_decay": "moderate",
+        "receptacle_attenuation": 0.1
+    }
+]

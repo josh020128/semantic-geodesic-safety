@@ -20,3 +20,11 @@ data/assets/
 # Generated outputs
 *.png
 *.npz
+
+# Generated/debug outputs
+loop1_scene_objects.json
+out/
+siglip2_labeler_v2_debug/
+
+# Local pretrained model files
+semantic_safety/perception_2d3d/pretrained_models/

@@ -316,6 +316,7 @@ class SemanticRouter:
             "manipulated": manipulated,
             "scene": scene,
             "families": list(entry.get("families", [])),
+            "scene_role": entry.get("scene_role", "hazard_target"),
             "topology_template": entry.get("topology_template", "isotropic_sphere"),
             "weights": {
                 "w_+x": float(weights.get("w_+x", 0.0)),
@@ -325,6 +326,7 @@ class SemanticRouter:
                 "w_+z": float(weights.get("w_+z", 0.0)),
                 "w_-z": float(weights.get("w_-z", 0.0)),
             },
+            "radius_m": float(entry.get("radius_m", 0.3)),
             "vertical_rule": entry.get("vertical_rule", "standard_decay"),
             "lateral_decay": entry.get("lateral_decay", "moderate"),
             "receptacle_attenuation": float(entry.get("receptacle_attenuation", 1.0)),
@@ -505,36 +507,140 @@ class SemanticRouter:
         if manip_family is None and scene_family is None:
             return None
 
-        receptacle_factor = 0.25 if scene in self.SAFE_RECEPTACLES or scene_family == "receptacle_family" else 1.0
-
+        # ------------------------------------------------------------
+        # Liquid cases
+        # ------------------------------------------------------------
         if manip_family == "liquid":
-            attenuation = 1.0
+            if scene_family == "electronics_family":
+                return self._attach_meta(
+                    {
+                        "manipulated": manipulated,
+                        "scene": scene,
+                        "families": ["liquid", "electrical"],
+                        "scene_role": "hazard_target",
+                        "topology_template": "upward_vertical_cone",
+                        "weights": {
+                            "w_+x": 0.30,
+                            "w_-x": 0.30,
+                            "w_+y": 0.30,
+                            "w_-y": 0.30,
+                            "w_+z": 0.90,
+                            "w_-z": 0.05,
+                        },
+                        "vertical_rule": "gravity_column",
+                        "lateral_decay": "moderate",
+                        "receptacle_attenuation": 1.0,
+                    },
+                    match_type="family",
+                    raw_manipulated=manipulated_label,
+                    raw_scene=scene_label,
+                    score=None,
+                    resolved_manipulated=manipulated,
+                    resolved_scene=scene,
+                )
+
+            if scene_family == "fragile_family":
+                return self._attach_meta(
+                    {
+                        "manipulated": manipulated,
+                        "scene": scene,
+                        "families": ["liquid", "fragile"],
+                        "scene_role": "hazard_target",
+                        "topology_template": "upward_vertical_cone",
+                        "weights": {
+                            "w_+x": 0.20,
+                            "w_-x": 0.20,
+                            "w_+y": 0.20,
+                            "w_-y": 0.20,
+                            "w_+z": 0.75,
+                            "w_-z": 0.05,
+                        },
+                        "vertical_rule": "gravity_column",
+                        "lateral_decay": "moderate",
+                        "receptacle_attenuation": 0.7,
+                    },
+                    match_type="family",
+                    raw_manipulated=manipulated_label,
+                    raw_scene=scene_label,
+                    score=None,
+                    resolved_manipulated=manipulated,
+                    resolved_scene=scene,
+                )
+
             if scene_family == "receptacle_family":
-                attenuation = 0.20
-            elif scene_family == "support_family":
-                attenuation = 0.50
-            elif scene_family == "electronics_family":
-                attenuation = 1.0
-            elif scene_family == "fragile_family":
-                attenuation = 0.85
+                return self._attach_meta(
+                    {
+                        "manipulated": manipulated,
+                        "scene": scene,
+                        "families": ["liquid"],
+                        "scene_role": "safe_receptacle",
+                        "topology_template": "isotropic_sphere",
+                        "weights": {
+                            "w_+x": 0.05,
+                            "w_-x": 0.05,
+                            "w_+y": 0.05,
+                            "w_-y": 0.05,
+                            "w_+z": 0.05,
+                            "w_-z": 0.05,
+                        },
+                        "vertical_rule": "standard_decay",
+                        "lateral_decay": "moderate",
+                        "receptacle_attenuation": 0.2,
+                    },
+                    match_type="family",
+                    raw_manipulated=manipulated_label,
+                    raw_scene=scene_label,
+                    score=None,
+                    resolved_manipulated=manipulated,
+                    resolved_scene=scene,
+                )
+
+            if scene_family == "support_family":
+                return self._attach_meta(
+                    {
+                        "manipulated": manipulated,
+                        "scene": scene,
+                        "families": ["liquid"],
+                        "scene_role": "support_context",
+                        "topology_template": "isotropic_sphere",
+                        "weights": {
+                            "w_+x": 0.05,
+                            "w_-x": 0.05,
+                            "w_+y": 0.05,
+                            "w_-y": 0.05,
+                            "w_+z": 0.08,
+                            "w_-z": 0.02,
+                        },
+                        "vertical_rule": "none",
+                        "lateral_decay": "moderate",
+                        "receptacle_attenuation": 0.1,
+                    },
+                    match_type="family",
+                    raw_manipulated=manipulated_label,
+                    raw_scene=scene_label,
+                    score=None,
+                    resolved_manipulated=manipulated,
+                    resolved_scene=scene,
+                )
 
             return self._attach_meta(
                 {
                     "manipulated": manipulated,
                     "scene": scene,
-                    "families": ["liquid"] + (["electrical"] if scene_family == "electronics_family" else []),
-                    "topology_template": "upward_vertical_cone",
+                    "families": ["liquid"],
+                    "scene_role": "neutral_context",
+                    "topology_template": "isotropic_sphere",
                     "weights": {
-                        "w_+x": 0.25 if attenuation > 0.4 else 0.15,
-                        "w_-x": 0.25 if attenuation > 0.4 else 0.15,
-                        "w_+y": 0.25 if attenuation > 0.4 else 0.15,
-                        "w_-y": 0.25 if attenuation > 0.4 else 0.15,
-                        "w_+z": 0.95 if attenuation > 0.5 else 0.55,
-                        "w_-z": 0.05,
+                        "w_+x": 0.08,
+                        "w_-x": 0.08,
+                        "w_+y": 0.08,
+                        "w_-y": 0.08,
+                        "w_+z": 0.10,
+                        "w_-z": 0.02,
                     },
-                    "vertical_rule": "gravity_column",
+                    "vertical_rule": "none",
                     "lateral_decay": "moderate",
-                    "receptacle_attenuation": attenuation * receptacle_factor,
+                    "receptacle_attenuation": 0.2,
                 },
                 match_type="family",
                 raw_manipulated=manipulated_label,
@@ -544,26 +650,34 @@ class SemanticRouter:
                 resolved_scene=scene,
             )
 
+        # ------------------------------------------------------------
+        # Sharp cases
+        # ------------------------------------------------------------
         if manip_family == "sharp":
-            attenuation = 0.75
             if scene_family == "fragile_family":
-                attenuation = 0.95
-            elif scene_family == "receptacle_family":
-                attenuation = 0.35
+                role = "hazard_target"
+                attenuation = 0.9
+            elif scene_family == "support_family":
+                role = "support_context"
+                attenuation = 0.15
+            else:
+                role = "neutral_context"
+                attenuation = 0.3
 
             return self._attach_meta(
                 {
                     "manipulated": manipulated,
                     "scene": scene,
                     "families": ["sharp"] + (["fragile"] if scene_family == "fragile_family" else []),
+                    "scene_role": role,
                     "topology_template": "forward_directional_cone",
                     "weights": {
-                        "w_+x": 0.55,
-                        "w_-x": 0.25,
-                        "w_+y": 0.55,
-                        "w_-y": 0.25,
-                        "w_+z": 0.15,
-                        "w_-z": 0.10,
+                        "w_+x": 0.45,
+                        "w_-x": 0.20,
+                        "w_+y": 0.45,
+                        "w_-y": 0.20,
+                        "w_+z": 0.10,
+                        "w_-z": 0.05,
                     },
                     "vertical_rule": "none",
                     "lateral_decay": "narrow",
@@ -577,59 +691,34 @@ class SemanticRouter:
                 resolved_scene=scene,
             )
 
-        if manip_family == "thermal":
-            attenuation = 0.75
-            if scene_family == "electronics_family":
-                attenuation = 0.90
-            elif scene_family == "receptacle_family":
-                attenuation = 0.35
-
-            return self._attach_meta(
-                {
-                    "manipulated": manipulated,
-                    "scene": scene,
-                    "families": ["thermal"],
-                    "topology_template": "isotropic_sphere",
-                    "weights": {
-                        "w_+x": 0.60,
-                        "w_-x": 0.60,
-                        "w_+y": 0.60,
-                        "w_-y": 0.60,
-                        "w_+z": 0.60,
-                        "w_-z": 0.45,
-                    },
-                    "vertical_rule": "standard_decay",
-                    "lateral_decay": "moderate",
-                    "receptacle_attenuation": attenuation,
-                },
-                match_type="family",
-                raw_manipulated=manipulated_label,
-                raw_scene=scene_label,
-                score=None,
-                resolved_manipulated=manipulated,
-                resolved_scene=scene,
-            )
-
+        # ------------------------------------------------------------
+        # Impact cases
+        # ------------------------------------------------------------
         if manip_family == "impact":
-            attenuation = 0.70
             if scene_family == "fragile_family":
-                attenuation = 0.95
-            elif scene_family == "receptacle_family":
-                attenuation = 0.30
+                role = "hazard_target"
+                attenuation = 0.9
+            elif scene_family == "support_family":
+                role = "support_context"
+                attenuation = 0.15
+            else:
+                role = "neutral_context"
+                attenuation = 0.3
 
             return self._attach_meta(
                 {
                     "manipulated": manipulated,
                     "scene": scene,
                     "families": ["impact"] + (["fragile"] if scene_family == "fragile_family" else []),
+                    "scene_role": role,
                     "topology_template": "isotropic_sphere",
                     "weights": {
-                        "w_+x": 0.55,
-                        "w_-x": 0.55,
-                        "w_+y": 0.55,
-                        "w_-y": 0.55,
-                        "w_+z": 0.70,
-                        "w_-z": 0.25,
+                        "w_+x": 0.35,
+                        "w_-x": 0.35,
+                        "w_+y": 0.35,
+                        "w_-y": 0.35,
+                        "w_+z": 0.45,
+                        "w_-z": 0.15,
                     },
                     "vertical_rule": "standard_decay",
                     "lateral_decay": "moderate",
@@ -652,23 +741,37 @@ class SemanticRouter:
     def _build_conservative_fallback(self, manipulated_label: str, scene_label: str) -> dict[str, Any]:
         manipulated, scene = self._normalize_key(manipulated_label, scene_label)
 
-        receptacle_factor = 0.3 if scene in self.SAFE_RECEPTACLES else 0.8
+        scene_family = self._infer_scene_family(scene)
+
+        if scene_family == "support_family":
+            scene_role = "support_context"
+            receptacle_factor = 0.1
+            vertical_rule = "none"
+        elif scene_family == "receptacle_family":
+            scene_role = "safe_receptacle"
+            receptacle_factor = 0.2
+            vertical_rule = "standard_decay"
+        else:
+            scene_role = "neutral_context"
+            receptacle_factor = 0.3
+            vertical_rule = "standard_decay"
 
         return self._attach_meta(
             {
                 "manipulated": manipulated,
                 "scene": scene,
                 "families": [],
+                "scene_role": scene_role,
                 "topology_template": "isotropic_sphere",
                 "weights": {
-                    "w_+x": 0.50,
-                    "w_-x": 0.50,
-                    "w_+y": 0.50,
-                    "w_-y": 0.50,
-                    "w_+z": 0.50,
-                    "w_-z": 0.50,
+                    "w_+x": 0.10,
+                    "w_-x": 0.10,
+                    "w_+y": 0.10,
+                    "w_-y": 0.10,
+                    "w_+z": 0.10,
+                    "w_-z": 0.10,
                 },
-                "vertical_rule": "standard_decay",
+                "vertical_rule": vertical_rule,
                 "lateral_decay": "moderate",
                 "receptacle_attenuation": receptacle_factor,
             },

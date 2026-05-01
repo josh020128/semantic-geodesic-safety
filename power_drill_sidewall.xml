@@ -1,0 +1,43 @@
+<mujoco model="semantic_safety_tabletop_drill_rightwall">
+    <compiler angle="degree" coordinate="local" texturedir="."/>
+
+    <option gravity="0 0 -9.81"/>
+
+    <asset>
+        <mesh name="drill_mesh" file="data/assets/power_drill/textured.obj" scale="1 1 1"/>
+        <texture name="drill_tex" type="2d" file="data/assets/power_drill/texture_map.png"/>
+        <material name="drill_mat" texture="drill_tex"/>
+    </asset>
+
+    <worldbody>
+        <light pos="0 0 1.5" dir="0 0 -1" directional="true" castshadow="false"/>
+
+        <!-- tabletop -->
+        <geom
+            name="table"
+            type="box"
+            size="0.5 0.5 0.05"
+            pos="0 0 0"
+            rgba="0.6 0.4 0.2 1"/>
+
+        <camera
+            name="main_cam"
+            pos="0 -0.8 0.5"
+            fovy="45"
+            xyaxes="1 0 0 0 0.5 0.8"/>
+
+        <!-- centered drill -->
+        <body name="power_drill" pos="0 0 0.1">
+            <freejoint/>
+            <geom type="mesh" mesh="drill_mesh" material="drill_mat"/>
+        </body>
+
+        <!-- wall on the right side of the drill (+x direction) -->
+        <geom
+            name="right_wall"
+            type="box"
+            pos="0.16 0 0.23"
+            size="0.015 0.18 0.18"
+            rgba="0.5 0.5 0.5 1"/>
+    </worldbody>
+</mujoco>

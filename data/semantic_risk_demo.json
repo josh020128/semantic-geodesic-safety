@@ -6,13 +6,14 @@
         "scene_role": "hazard_target",
         "topology_template": "upward_vertical_cone",
         "weights": {
-        "w_+x": 0.2,
-        "w_-x": 0.2,
-        "w_+y": 0.2,
-        "w_-y": 0.2,
-        "w_+z": 1.0,
-        "w_-z": 0.0
+          "w_+x": 0.3,
+          "w_-x": 0.3,
+          "w_+y": 0.3,
+          "w_-y": 0.3,
+          "w_+z": 1.0,
+          "w_-z": 0.0
         },
+        "radius_m": 0.17,
         "vertical_rule": "gravity_column",
         "lateral_decay": "moderate",
         "receptacle_attenuation": 1.0
@@ -31,6 +32,7 @@
         "w_+z": 0.1,
         "w_-z": 0.0
         },
+        "radius_m": 0.2,
         "vertical_rule": "standard_decay",
         "lateral_decay": "narrow",
         "receptacle_attenuation": 0.1
@@ -49,6 +51,7 @@
         "w_+z": 0.15,
         "w_-z": 0.0
         },
+        "radius_m": 0.0,
         "vertical_rule": "standard_decay",
         "lateral_decay": "narrow",
         "receptacle_attenuation": 0.2

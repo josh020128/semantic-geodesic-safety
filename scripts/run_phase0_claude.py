@@ -1,4 +1,26 @@
-"""Prompt strings for Phase 0 LLM prior and Gemini batch system instruction."""
+#!/usr/bin/env python3
+"""Batch Phase 0: Claude generates semantic risk entries for (manipulated, scene) pairs → data/ JSON."""
+
+import itertools
+import json
+import os
+import re
+from pathlib import Path
+
+from anthropic import Anthropic
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data"
+OUTPUT_PATH = DATA_DIR / "semantic_risk_demo_claude.json"
+
+# 1. Define the datasets (kept identical to run_phase0.py)
+group_a = ["cup of water", "kitchen knife", "hot soldering iron"]
+group_b = ["laptop", "mug", "bowl", "soccer ball", "power drill", "bleach cleanser"]
+group_c = ["table", "shelf"]
+
+M = group_a + group_b
+S = group_a + group_b + group_c
+all_pairs = list(itertools.product(M, S))
 
 SYSTEM_INSTRUCTION = """
 Evaluate each ordered pair: (manipulated object, scene object).
@@ -27,7 +49,7 @@ Use exactly this schema for every entry:
   "manipulated": "string",
   "scene": "string",
   "families": ["string", ...],
-  "scene_role": "hazard_target | safe_receptacle | support_context | neutral_context",
+  "scene_role": "hazard_target | safe_receptacle | support_context",
   "topology_template": "upward_vertical_cone | isotropic_sphere | forward_directional_cone | planar_half_space",
   "weights": {
     "w_+x": float,
@@ -51,10 +73,10 @@ Choose zero or more relevant hazard families from:
 
 2) scene_role
 Choose exactly one:
-- "hazard_target": the scene object is vulnerable and may be harmed
-- "safe_receptacle": the scene object safely receives or contains the hazard
+- "hazard_target": the scene object is vulnerable or may be harmed
+- "safe_receptacle": the scene object safely receives or contains the hazard (choose this when the scene object is safe to interact with)
 - "support_context": the scene object is mainly structural context
-- "neutral_context": little or no meaningful hazard relation
+- Do not output any other scene_role value.
 
 Hard rule for support_context (must follow):
 - If scene_role is "support_context" (e.g., table, shelf, floor, wall, counter, desk), then:
@@ -81,7 +103,7 @@ Important convention:
 - DO NOT automatically make w_+z high just because the manipulated object is a liquid.
 - Make w_+z high only when "from above" creates meaningful consequence to the scene object (i.e., the scene is vulnerable to spill/drip/drop from above).
 - If the scene object is water-tolerant, washable, or not meaningfully harmed by getting wet (e.g., bowl, mug, sink, most metal tools like a kitchen knife),
-  then liquid-from-above should usually be LOW risk (often "safe_receptacle" or "neutral_context"), with low w_+z and usually "standard_decay".
+  then liquid-from-above should usually be LOW risk (often "safe_receptacle" or "support_context"), with low w_+z and usually "standard_decay".
 - w_-z is often 0.0 when “below the scene object” is not dangerous
 
 Interpretation:
@@ -95,7 +117,7 @@ Interpretation:
 Use a realistic local manipulation radius in meters.
 radius_m is a RADIUS (not diameter). It should be small and local.
 Avoid unrealistic large radii:
-- In most everyday tabletop scenes, radius_m should usually be in [0.03, 0.20]
+- In most everyday tabletop scenes, radius_m should usually be in [0.06, 0.20]
 - Use >0.20 only for truly large/extended hazards (e.g., large fragile area, large swinging tool), and still keep it conservative
 - For small hand-sized scene objects (e.g., bleach cleanser bottle), radius_m is often 0.05–0.12
 When in doubt, choose a smaller radius.
@@ -127,15 +149,15 @@ Guidance:
 - Do NOT leave this at 1.0 by default. It should vary with the pair.
 - For "safe_receptacle", receptacle_attenuation should usually be 0.1–0.3.
 - For "support_context", receptacle_attenuation must be 0.1 (see hard rule above).
-- For "neutral_context", receptacle_attenuation is typically 0.3–0.6 unless truly no relation (then weights/radius are 0 anyway).
+- For "hazard_target", receptacle_attenuation should usually be 1.0.
+- If there is no meaningful hazard for the pair, keep weights low (often near 0.0) and keep receptacle_attenuation low (typically 0.1–0.3).
 
 Decision rules:
 - Base the answer on common-sense physical interaction.
 - Be conservative but physically plausible.
-- If the manipulated object can directly damage the scene object, use "hazard_target".
-- If the scene object safely catches or contains the manipulated object or its contents, use "safe_receptacle".
+- If the manipulated object can directly damage or may damage the scene object, use "hazard_target".
+- If the scene object is completely safe to interact with the manipulated object, use "safe_receptacle".
 - If the scene object is mainly a table, desk, wall, floor, counter, or shelf, often use "support_context".
-- If there is little meaningful interaction, use "neutral_context".
 
 Vulnerability sanity checks (important):
 - Liquids: Only treat liquid-from-above as high risk when the scene object is actually vulnerable (electronics, paper/books, open food, sensitive machinery, etc.).
@@ -145,18 +167,7 @@ Vulnerability sanity checks (important):
 Concrete examples to calibrate:
 - (cup of water, laptop): hazard_target; families include ["liquid","electrical"]; upward_vertical_cone; w_+z high; vertical_rule gravity_column.
 - (cup of water, bowl): safe_receptacle; families may be ["liquid"] or []; low weights (including low w_+z); vertical_rule standard_decay; receptacle_attenuation low (e.g., 0.1–0.3).
-- (cup of water, kitchen knife): usually neutral_context (or very weak hazard_target at most); low weights; vertical_rule standard_decay (wet knife is not a meaningful hazard to the knife).
-
-Default no-relation rule:
-If there is essentially no meaningful hazard relation, output:
-- "families": []
-- "scene_role": "neutral_context"
-- "topology_template": "isotropic_sphere"
-- all weights = 0.0
-- "radius_m": 0.0
-- "vertical_rule": "standard_decay"
-- "lateral_decay": "moderate"
-- "receptacle_attenuation": 1.0
+- (cup of water, kitchen knife): hazard_target; low weights; vertical_rule standard_decay (wet knife is not a meaningful hazard to the knife).
 
 Example:
 [  
@@ -181,24 +192,95 @@ Example:
     }
     ...
 ]
-"""
+""".strip()
 
-RISK_PRIOR_PROMPT = """You are an expert physical reasoning engine for robotics semantic risk.
 
-Evaluate the ordered pair (manipulated object, scene object):
-- manipulated: {manipulated}
-- scene: {scene}
+def chunk_list(data, chunk_size):
+    """Yield successive chunks from the data list."""
+    for i in range(0, len(data), chunk_size):
+        yield data[i : i + chunk_size]
 
-The coordinate frame is centered on the scene object. Weights encode meaningful hazard along +x, -x, +y, -y, +z (above), -z (below) relative to the scene object. Use values in [0.0, 1.0]. Reflect consequence to the scene object, not mere reachability; if the scene is not meaningfully vulnerable, keep all weights low.
 
-Output strictly one JSON object with these keys (no markdown fences, no extra text):
-{{
-  "base_risk": <float>,
-  "w_plus_x": <float>,
-  "w_minus_x": <float>,
-  "w_plus_y": <float>,
-  "w_minus_y": <float>,
-  "w_plus_z": <float>,
-  "w_minus_z": <float>
-}}
-"""
+_FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def _extract_json_array(text: str) -> str:
+    """
+    Claude sometimes wraps JSON in markdown fences or adds whitespace.
+    We aggressively strip fences and then fall back to the first JSON array substring.
+    """
+    cleaned = _FENCE_RE.sub("", text).strip()
+    if cleaned.startswith("[") and cleaned.endswith("]"):
+        return cleaned
+
+    start = cleaned.find("[")
+    end = cleaned.rfind("]")
+    if start != -1 and end != -1 and end > start:
+        return cleaned[start : end + 1].strip()
+
+    return cleaned
+
+
+def generate_dataset() -> None:
+    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("CLAUDE_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing ANTHROPIC_API_KEY (or CLAUDE_API_KEY).")
+
+    # Use a concrete model id by default. This should be one that is visible in `c.models.list()`
+    # for your Anthropic account / API key.
+    model = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+    client = Anthropic(api_key=api_key)
+
+    final_dataset: list = []
+    batches = list(chunk_list(all_pairs, 20))
+
+    print(f"Total pairs to process: {len(all_pairs)}")
+    print(f"Processing in {len(batches)} batches...\n")
+
+    for idx, batch in enumerate(batches):
+        print(f"Processing batch {idx + 1}/{len(batches)}...")
+
+        prompt_payload = "Calculate risk for the following pairs:\n"
+        for manip, scene in batch:
+            prompt_payload += f"- Manipulated: '{manip}', Scene: '{scene}'\n"
+        prompt_payload += "\nReturn ONLY the JSON array (no extra text)."
+
+        try:
+            response = client.messages.create(
+                model=model,
+                system=SYSTEM_INSTRUCTION,
+                messages=[{"role": "user", "content": prompt_payload}],
+                temperature=0.1,
+                max_tokens=4096,
+            )
+
+            text_parts = []
+            for part in response.content or []:
+                if getattr(part, "type", None) == "text":
+                    text_parts.append(part.text)
+            text = "\n".join(text_parts).strip()
+            if not text:
+                raise RuntimeError("Claude returned empty response.")
+
+            json_text = _extract_json_array(text)
+            batch_data = json.loads(json_text)
+            if not isinstance(batch_data, list):
+                print(
+                    f"Error processing batch {idx + 1}: expected JSON array, got {type(batch_data)}"
+                )
+                continue
+            final_dataset.extend(batch_data)
+        except Exception as e:
+            print(f"Error processing batch {idx + 1}: {e}")
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(final_dataset, f, indent=4)
+
+    print(f"\nSuccess! Generated {len(final_dataset)} entries.")
+    print(f"Dataset saved to: {OUTPUT_PATH}")
+
+
+if __name__ == "__main__":
+    generate_dataset()
+

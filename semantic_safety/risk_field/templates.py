@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from typing import Dict, Tuple
-from scipy import ndimage
+
 import numpy as np
+from scipy import ndimage
 
 from semantic_safety.metric_propagation.fmm_distance import WorkspaceGrid
-from semantic_safety.risk_field.interpolation import compute_directional_weights
-from semantic_safety.risk_field.superposition import risk_cost_field
 
 
 BBox = Tuple[float, float, float, float, float, float]
@@ -88,6 +87,7 @@ def gravity_column_from_surface_mask(
 
     return V
 
+
 def _default_weights(weights_dict: Dict[str, float] | None) -> Dict[str, float]:
     if not weights_dict:
         return {
@@ -114,18 +114,17 @@ def _get_standard_alpha(topology_template: str, risk_params: Dict) -> float:
         return float(risk_params["alpha"])
 
     defaults = {
-        "upward_vertical_cone": 14.0,
-        "isotropic_sphere": 8.0,
-        "forward_directional_cone": 14.0,
+        "upward_vertical_cone": 8.0,
+        "isotropic_sphere": 7.0,
+        "forward_directional_cone": 8.0,
         "planar_half_space": 6.0,
     }
-    return defaults.get(topology_template, 10.0)
+    return defaults.get(topology_template, 8.0)
 
 
 def _get_vertical_extent_m(risk_params: Dict) -> float:
     """
     Max useful height for gravity-dominant vertical hazard.
-    Tighter default than before so the field does not fill too much of the volume.
     """
     return float(risk_params.get("vertical_extent_m", 0.22))
 
@@ -184,29 +183,303 @@ def _dominant_halfspace_signed_distance(grid: WorkspaceGrid, bbox: BBox, weights
 
 
 # ---------------------------------------------------------------------
+# New support-shape helpers for general standard decay
+# ---------------------------------------------------------------------
+
+def _bbox_center_xyz(bbox: BBox) -> np.ndarray:
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    return np.array(
+        [
+            0.5 * (xmin + xmax),
+            0.5 * (ymin + ymax),
+            0.5 * (zmin + zmax),
+        ],
+        dtype=np.float64,
+    )
+
+
+def _surface_center_xyz(grid: WorkspaceGrid, surface_mask: np.ndarray) -> np.ndarray | None:
+    if surface_mask is None or not np.any(surface_mask):
+        return None
+
+    idx = np.argwhere(surface_mask)
+    if len(idx) == 0:
+        return None
+
+    return np.array(
+        [
+            float(grid.x[idx[:, 0]].mean()),
+            float(grid.y[idx[:, 1]].mean()),
+            float(grid.z[idx[:, 2]].mean()),
+        ],
+        dtype=np.float64,
+    )
+
+
+def _surface_top_center_xyz(
+    grid: WorkspaceGrid,
+    surface_mask: np.ndarray,
+    bbox: BBox,
+) -> np.ndarray:
+    c = _surface_center_xyz(grid, surface_mask)
+    if c is None:
+        c = _bbox_center_xyz(bbox)
+        c[2] = bbox[5]
+        return c
+
+    idx = np.argwhere(surface_mask)
+    c[2] = float(grid.z[idx[:, 2]].max())
+    return c
+
+
+def _choose_standard_decay_anchor(
+    grid: WorkspaceGrid,
+    bbox: BBox,
+    surface_mask: np.ndarray,
+    risk_params: Dict,
+    topology_template: str,
+) -> np.ndarray:
+    anchor_mode = str(risk_params.get("anchor_mode", "auto")).lower()
+
+    if anchor_mode == "bbox_center":
+        return _bbox_center_xyz(bbox)
+
+    if anchor_mode == "top_surface":
+        return _surface_top_center_xyz(grid, surface_mask, bbox)
+
+    # auto
+    if topology_template == "upward_vertical_cone":
+        return _surface_top_center_xyz(grid, surface_mask, bbox)
+
+    return _bbox_center_xyz(bbox)
+
+
+def _get_standard_radius_m(
+    bbox: BBox,
+    topology_template: str,
+    risk_params: Dict,
+) -> float:
+    if "radius_m" in risk_params:
+        return float(risk_params["radius_m"])
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    dx = float(xmax - xmin)
+    dy = float(ymax - ymin)
+    dz = float(zmax - zmin)
+
+    horiz_half = 0.5 * max(dx, dy)
+    diag_half = 0.5 * np.sqrt(dx * dx + dy * dy + dz * dz)
+
+    defaults = {
+        "isotropic_sphere": max(0.06, 0.90 * diag_half),
+        "upward_vertical_cone": max(0.08, 0.95 * horiz_half),
+        "forward_directional_cone": max(0.10, 1.05 * horiz_half),
+        "planar_half_space": max(0.08, 0.95 * horiz_half),
+    }
+    return float(defaults.get(topology_template, max(0.10, 1.20 * diag_half)))
+
+
+def _get_directional_gamma(
+    topology_template: str,
+    risk_params: Dict,
+) -> float:
+    if "directional_gamma" in risk_params:
+        return float(risk_params["directional_gamma"])
+
+    defaults = {
+        "isotropic_sphere": 1.0,
+        "upward_vertical_cone": 1.1,
+        "forward_directional_cone": 1.8,
+        "planar_half_space": 1.1,
+    }
+    return float(defaults.get(topology_template, 1.0))
+
+
+def _directional_radius_multiplier(
+    dx: np.ndarray,
+    dy: np.ndarray,
+    dz: np.ndarray,
+    weights_dict: Dict[str, float],
+    gamma: float,
+) -> np.ndarray:
+    l_px = np.maximum(dx, 0.0)
+    l_nx = np.maximum(-dx, 0.0)
+    l_py = np.maximum(dy, 0.0)
+    l_ny = np.maximum(-dy, 0.0)
+    l_pz = np.maximum(dz, 0.0)
+    l_nz = np.maximum(-dz, 0.0)
+
+    denom = l_px + l_nx + l_py + l_ny + l_pz + l_nz
+    denom = np.maximum(denom, 1e-8)
+
+    mix = (
+        (l_px / denom) * float(weights_dict.get("w_+x", 0.0)) +
+        (l_nx / denom) * float(weights_dict.get("w_-x", 0.0)) +
+        (l_py / denom) * float(weights_dict.get("w_+y", 0.0)) +
+        (l_ny / denom) * float(weights_dict.get("w_-y", 0.0)) +
+        (l_pz / denom) * float(weights_dict.get("w_+z", 0.0)) +
+        (l_nz / denom) * float(weights_dict.get("w_-z", 0.0))
+    )
+
+    mix = np.clip(mix, 0.0, None)
+    if abs(gamma - 1.0) > 1e-8:
+        mix = np.power(mix, gamma)
+
+    return mix
+
+
+def _directional_support_distance(
+    grid: WorkspaceGrid,
+    anchor_xyz: np.ndarray,
+    weights_dict: Dict[str, float],
+    radius_m: float,
+    gamma: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    dx = grid.X - float(anchor_xyz[0])
+    dy = grid.Y - float(anchor_xyz[1])
+    dz = grid.Z - float(anchor_xyz[2])
+
+    r = np.sqrt(dx * dx + dy * dy + dz * dz)
+    radius_multiplier = _directional_radius_multiplier(dx, dy, dz, weights_dict, gamma)
+    R = float(radius_m) * radius_multiplier
+
+    d_support = np.maximum(0.0, r - R)
+    return d_support, R
+
+
+def _standard_decay_vertical_gate(
+    grid: WorkspaceGrid,
+    anchor_xyz: np.ndarray,
+    weights_dict: Dict[str, float],
+    risk_params: Dict,
+) -> np.ndarray:
+    gate_mode = str(risk_params.get("vertical_gate", "auto")).lower()
+
+    if gate_mode == "none":
+        return np.ones(grid.shape, dtype=np.float64)
+
+    if gate_mode == "above_anchor":
+        return (grid.Z >= float(anchor_xyz[2])).astype(np.float64)
+
+    # auto:
+    # if downward weight is effectively zero and upward weight is present,
+    # use an upward hemisphere/dome gate
+    if float(weights_dict.get("w_-z", 0.0)) <= 1e-8 and float(weights_dict.get("w_+z", 0.0)) > 0.0:
+        return (grid.Z >= float(anchor_xyz[2])).astype(np.float64)
+
+    return np.ones(grid.shape, dtype=np.float64)
+
+def _get_radius_tail_fraction(risk_params: Dict) -> float:
+    """
+    At r = directional radius R, what fraction of peak should remain?
+    Example:
+      0.05 -> 5% remains at r = R
+      0.02 -> 2% remains at r = R (faster decay)
+    """
+    tau = float(risk_params.get("radius_tail_fraction", 0.05))
+    return float(np.clip(tau, 1e-4, 0.5))
+
+def _get_radius_decay_k(risk_params: Dict) -> float:
+    """
+    If alpha is explicitly provided, respect it.
+    Otherwise derive a dimensionless decay constant from radius_tail_fraction.
+    """
+    if "alpha" in risk_params:
+        return float(risk_params["alpha"])
+
+    tau = _get_radius_tail_fraction(risk_params)
+    return float(-np.log(tau))
+
+def _get_radius_cutoff_multiple(risk_params: Dict) -> float:
+    """
+    Optional soft/hard cutoff beyond the directional radius.
+    Example:
+      1.5 -> show until ~1.5 * R
+      2.0 -> show until ~2.0 * R
+    """
+    return float(risk_params.get("radius_cutoff_multiple", 1.5))
+# ---------------------------------------------------------------------
 # Core field components
 # ---------------------------------------------------------------------
 
 def build_standard_decay_component(
-    grid: WorkspaceGrid,
-    bbox: BBox,
-    weights_dict: Dict[str, float],
-    d_geo: np.ndarray,
-    A_field: np.ndarray,
-    base_risk: float,
-    alpha: float,
-) -> np.ndarray:
-    """
-    Generic directionally weighted exponential decay field.
-    """
-    W_field = compute_directional_weights(grid.X, grid.Y, grid.Z, bbox, weights_dict)
-    return risk_cost_field(
-        W_hazard=W_field,
-        A=A_field,
-        d_geo=d_geo,
-        alpha=alpha,
-        base_risk=base_risk,
+    grid,
+    bbox,
+    weights_dict,
+    d_geo,
+    A_field,
+    base_risk,
+    alpha,
+    topology_template,
+    risk_params,
+    object_mask=None,
+    surface_mask=None,
+    footprint_mask=None,
+):
+    weights_dict = _default_weights(weights_dict)
+
+    anchor_xyz = _choose_standard_decay_anchor(
+        grid=grid,
+        bbox=bbox,
+        surface_mask=surface_mask,
+        risk_params=risk_params,
+        topology_template=topology_template,
     )
+
+    radius_m = _get_standard_radius_m(
+        bbox=bbox,
+        topology_template=topology_template,
+        risk_params=risk_params,
+    )
+
+    gamma = _get_directional_gamma(
+        topology_template=topology_template,
+        risk_params=risk_params,
+    )
+
+    dx = grid.X - float(anchor_xyz[0])
+    dy = grid.Y - float(anchor_xyz[1])
+    dz = grid.Z - float(anchor_xyz[2])
+
+    r = np.sqrt(dx * dx + dy * dy + dz * dz)
+
+    radius_multiplier = _directional_radius_multiplier(
+        dx=dx,
+        dy=dy,
+        dz=dz,
+        weights_dict=weights_dict,
+        gamma=gamma,
+    )
+
+    # 방향별 plateau radius
+    R = np.maximum(float(radius_m) * radius_multiplier, 1e-6)
+
+    # plateau 바깥으로 얼마나 나갔는지
+    d_out = np.maximum(0.0, r - R)
+
+    # tail 길이 (JSON에 없으면 내부 default)
+    tail_m = float(risk_params.get("tail_m", max(0.04, 0.50 * float(radius_m))))
+    tail_m = max(tail_m, 1e-6)
+
+    # 빠른 decay
+    # d_out = tail_m 일 때 exp(-4) ≈ 0.018
+    d_out = np.maximum(0.0, r - R)
+    V = base_risk * A_field * np.exp(-1.5 * d_out / tail_m)
+
+    vertical_gate = _standard_decay_vertical_gate(
+        grid=grid,
+        anchor_xyz=anchor_xyz,
+        weights_dict=weights_dict,
+        risk_params=risk_params,
+    )
+    V *= vertical_gate
+
+    # 너무 긴 tail 제거
+    cutoff_m = float(risk_params.get("cutoff_m", radius_m + 2.5 * tail_m))
+    V *= (r <= cutoff_m).astype(np.float64)
+
+    V[np.isnan(V)] = 0.0
+    return V
 
 
 def build_gravity_column_component(
@@ -285,31 +558,30 @@ def build_upward_vertical_cone_field(
     A_field,
     base_risk,
 ):
-    weights = risk_params.get("weights", {})
+    weights = _default_weights(risk_params.get("weights", {}))
     vertical_rule = risk_params.get("vertical_rule", "standard_decay")
-    lateral_decay = risk_params.get("lateral_decay", "moderate")
+    alpha = _get_standard_alpha("upward_vertical_cone", risk_params)
 
-    # Standard directional field
-    W_field = compute_directional_weights(
-        X=grid.X,
-        Y=grid.Y,
-        Z=grid.Z,
+    V = build_standard_decay_component(
+        grid=grid,
         bbox=bbox,
         weights_dict=weights,
+        d_geo=d_geo,
+        A_field=A_field,
+        base_risk=base_risk,
+        alpha=alpha,
+        topology_template="upward_vertical_cone",
+        risk_params=risk_params,
+        object_mask=object_mask,
+        surface_mask=surface_mask,
+        footprint_mask=footprint_mask,
     )
 
-    alpha_map = {"narrow": 14.0, "moderate": 10.0, "wide": 6.0}
-    alpha = alpha_map.get(lateral_decay, 10.0)
-
-    V = base_risk * W_field * A_field * np.exp(-alpha * np.clip(d_geo, 0, None))
-
-    # Special gravity-aware vertical behavior
     if vertical_rule == "gravity_column":
         if footprint_mask is None and surface_mask is not None:
             footprint_mask = surface_mask_to_footprint(surface_mask)
 
         if surface_mask is None and object_mask is not None:
-            # fallback: if top surface wasn't explicitly given, use object mask itself
             surface_mask = object_mask
 
         if surface_mask is not None and np.any(surface_mask):
@@ -319,11 +591,12 @@ def build_upward_vertical_cone_field(
                 A_field=A_field,
                 base_risk=base_risk,
                 w_plus_z=float(weights.get("w_+z", 0.0)),
-                lateral_decay=lateral_decay,
+                lateral_decay=risk_params.get("lateral_decay", "moderate"),
             )
             V = np.maximum(V, V_gravity)
 
     return V
+
 
 def build_isotropic_sphere_field(
     grid: WorkspaceGrid,
@@ -347,6 +620,11 @@ def build_isotropic_sphere_field(
         A_field=A_field,
         base_risk=base_risk,
         alpha=alpha,
+        topology_template="isotropic_sphere",
+        risk_params=risk_params,
+        object_mask=object_mask,
+        surface_mask=surface_mask,
+        footprint_mask=footprint_mask,
     )
 
 
@@ -361,24 +639,22 @@ def build_forward_directional_cone_field(
     surface_mask=None,
     footprint_mask=None,
 ) -> np.ndarray:
-    """
-    Directional cone:
-    - uses directional interpolation
-    - sharpens the directional multiplier to narrow the cone
-    """
     weights_dict = _default_weights(risk_params.get("weights", {}))
     alpha = _get_standard_alpha("forward_directional_cone", risk_params)
-    cone_power = float(risk_params.get("directional_power", 1.8))
 
-    W_field = compute_directional_weights(grid.X, grid.Y, grid.Z, bbox, weights_dict)
-    W_field = np.power(np.clip(W_field, 0.0, 1.0), cone_power)
-
-    return risk_cost_field(
-        W_hazard=W_field,
-        A=A_field,
+    return build_standard_decay_component(
+        grid=grid,
+        bbox=bbox,
+        weights_dict=weights_dict,
         d_geo=d_geo,
-        alpha=alpha,
+        A_field=A_field,
         base_risk=base_risk,
+        alpha=alpha,
+        topology_template="forward_directional_cone",
+        risk_params=risk_params,
+        object_mask=object_mask,
+        surface_mask=surface_mask,
+        footprint_mask=footprint_mask,
     )
 
 
@@ -411,6 +687,11 @@ def build_planar_half_space_field(
         A_field=A_field,
         base_risk=base_risk,
         alpha=alpha,
+        topology_template="planar_half_space",
+        risk_params=risk_params,
+        object_mask=object_mask,
+        surface_mask=surface_mask,
+        footprint_mask=footprint_mask,
     )
 
     V_halfspace = build_planar_half_space_component(
@@ -484,11 +765,11 @@ def build_risk_field_from_params(
     return build_isotropic_sphere_field(
         grid=grid,
         bbox=bbox,
-        object_mask=object_mask,
-        surface_mask=surface_mask,
-        footprint_mask=footprint_mask,
         risk_params=risk_params,
         d_geo=d_geo,
         A_field=A_field,
         base_risk=base_risk,
+        object_mask=object_mask,
+        surface_mask=surface_mask,
+        footprint_mask=footprint_mask,
     )

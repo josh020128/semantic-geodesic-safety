@@ -16,19 +16,22 @@ from semantic_safety.metric_propagation.fmm_distance import WorkspaceGrid
 from semantic_safety.risk_field.superposition import (
     shielding_ratio,
     compute_logsumexp_superposition,
+    compute_hybrid_superposition,
+    compute_sum_superposition,
 )
 from semantic_safety.risk_field.templates import build_risk_field_from_params
-from semantic_safety.phase0_dataset.prompts import GEMINI_SYSTEM_INSTRUCTION
+from semantic_safety.phase0_dataset.prompts import SYSTEM_INSTRUCTION
 
+PRIOR_JSON_DEFAULT = "/home/gl34/research/semantic-geodesic-safety/data/semantic_risk_demo_claude.json"
 
 # ----------------------------------------------------------------------
-# Optional Gemini hook
+# Optional Claude hook
 # ----------------------------------------------------------------------
 
 try:
-    from semantic_safety.semantic_router.gemini_callbacks import gemini_batch_callback
+    from semantic_safety.semantic_router.claude_callbacks import claude_batch_callback
 except Exception:
-    gemini_batch_callback = None
+    claude_batch_callback = None
 
 # ----------------------------------------------------------------------
 # JSON Object Loader Helpers
@@ -71,16 +74,30 @@ def build_candidate_labels(
         pass1.append(target_label)
     pass1.extend(prior_scenes)
 
-    # dedupe
+    # 중요: user가 직접 준 labels도 pass1에 포함
+    if user_candidate_labels:
+        pass1.extend(user_candidate_labels)
+
     seen = set()
     pass1 = [x for x in pass1 if not (x.lower() in seen or seen.add(x.lower()))]
 
-    if user_candidate_labels:
-        pass2 = pass1 + [x for x in user_candidate_labels if x.lower() not in seen]
-    else:
-        pass2 = pass1
-
+    pass2 = list(pass1)
     return pass1, pass2
+
+def get_object_max_risk_score(risk_params: dict) -> float:
+    weights = risk_params.get("weights", {})
+    if not weights:
+        return 1.0
+    return float(np.clip(max(float(v) for v in weights.values()), 0.0, 1.0))
+
+
+def normalize_weights_for_shape(weights: dict) -> dict:
+    if not weights:
+        return weights
+    m = max(float(v) for v in weights.values())
+    if m <= 1e-8:
+        return weights
+    return {k: float(v) / m for k, v in weights.items()}
 
 # ----------------------------------------------------------------------
 # Geometry helpers
@@ -245,6 +262,46 @@ def build_global_workspace_bounds(
 
     return (xmin, xmax, ymin, ymax, zmin, zmax)
 
+def build_blocker_solid_mask(
+    occupancy_surface_mask: np.ndarray,
+    occupancy_bbox_3d: tuple[float, float, float, float, float, float],
+    grid,
+    pad_xy_voxels: int = 2,
+) -> np.ndarray:
+    """
+    Build a conservative blocker mask from the observed surface footprint.
+    No label hard-coding.
+
+    - use observed x-y footprint from occupancy_surface_mask
+    - close tiny holes in 2D
+    - dilate only in x-y
+    - extrude through the object's z-range
+    """
+    if not np.any(occupancy_surface_mask):
+        return np.zeros_like(occupancy_surface_mask, dtype=bool)
+
+    # 2D footprint from observed surface
+    footprint_xy = np.any(occupancy_surface_mask, axis=2)
+
+    structure2d = ndimage.generate_binary_structure(2, 1)
+    footprint_xy = ndimage.binary_closing(footprint_xy, structure=structure2d, iterations=1)
+
+    if pad_xy_voxels > 0:
+        footprint_xy = ndimage.binary_dilation(
+            footprint_xy,
+            structure=structure2d,
+            iterations=pad_xy_voxels,
+        )
+
+    xmin, xmax, ymin, ymax, zmin, zmax = occupancy_bbox_3d
+
+    blocker_solid_mask = (
+        footprint_xy[:, :, None]
+        & (grid.Z >= zmin)
+        & (grid.Z <= zmax)
+    )
+
+    return blocker_solid_mask
 
 def segmentation_mask_to_world_points(
     mask_2d: np.ndarray,
@@ -481,6 +538,29 @@ def voxel_mask_to_bbox(
         float(zs.max() + pad),
     )
 
+def bbox_to_voxel_mask(
+    grid: WorkspaceGrid,
+    bbox: tuple[float, float, float, float, float, float],
+    pad_xy_voxels: int = 1,
+    pad_z_voxels: int = 0,
+) -> np.ndarray:
+    """
+    Fill an axis-aligned bbox as a solid voxel mask.
+
+    pad_xy_voxels:
+        expand conservatively in x/y so perception shrink does not leave holes.
+    pad_z_voxels:
+        usually keep 0 for shelves/tables so we do not thicken vertically too much.
+    """
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    pad_xy = pad_xy_voxels * grid.res
+    pad_z = pad_z_voxels * grid.res
+
+    return (
+        (grid.X >= (xmin - pad_xy)) & (grid.X <= (xmax + pad_xy)) &
+        (grid.Y >= (ymin - pad_xy)) & (grid.Y <= (ymax + pad_xy)) &
+        (grid.Z >= (zmin - pad_z))  & (grid.Z <= (zmax + pad_z))
+    )
 
 def build_multi_object_occupancy(
     grid: WorkspaceGrid,
@@ -505,6 +585,50 @@ def build_multi_object_occupancy(
 
     return free
 
+def build_conservative_blocker_mask(
+    grid: WorkspaceGrid,
+    occupancy_mask: np.ndarray,
+    occupancy_surface_mask: np.ndarray,
+    occupancy_bbox_3d: tuple[float, float, float, float, float, float],
+    pad_xy_voxels: int = 6,
+) -> np.ndarray:
+    """
+    Build a generic conservative blocker mask:
+    - keep the raw occupied voxels
+    - take the observed x-y footprint from the object's top surface
+    - close small holes in 2D
+    - dilate in x-y only
+    - extrude through the object's z-range
+    """
+    if not np.any(occupancy_mask):
+        return occupancy_mask
+
+    footprint = np.any(occupancy_surface_mask, axis=2)
+
+    structure2d = ndimage.generate_binary_structure(2, 1)
+    footprint = ndimage.binary_closing(footprint, structure=structure2d, iterations=1)
+    footprint = ndimage.binary_dilation(footprint, structure=structure2d, iterations=pad_xy_voxels)
+
+    zmin, zmax = occupancy_bbox_3d[4], occupancy_bbox_3d[5]
+    extruded = footprint[:, :, None] & (grid.Z >= zmin) & (grid.Z <= zmax)
+
+    blocker_mask = np.logical_or(extruded, occupancy_mask)
+    return blocker_mask
+
+def dilate_mask_xy(mask: np.ndarray, iterations: int = 2) -> np.ndarray:
+    """
+    Dilate only in the x-y plane, not along z.
+    Useful for conservative blocker occupancy without making shelves thicker vertically.
+    """
+    if not np.any(mask):
+        return mask
+
+    struct_xy = np.zeros((3, 3, 3), dtype=bool)
+    struct_xy[:, :, 1] = ndimage.generate_binary_structure(2, 1)
+
+    out = ndimage.binary_closing(mask, structure=struct_xy, iterations=1)
+    out = ndimage.binary_dilation(out, structure=struct_xy, iterations=iterations)
+    return out
 
 def gravity_column_from_surface_mask(
     grid: WorkspaceGrid,
@@ -710,11 +834,77 @@ def dedupe_object_infos_by_canonical_label_and_geometry(
 
     return kept
 
+def suppress_contained_duplicate_objects(
+    object_infos: list[dict],
+    router: SemanticRouter,
+    containment_threshold: float = 0.85,
+    area_ratio_threshold: float = 0.45,
+    center_dist_threshold: float = 0.08,
+    depth_diff_threshold: float = 0.08,
+) -> list[dict]:
+    if not object_infos:
+        return object_infos
+
+    def box_area(box):
+        return max(1, (box["xmax"] - box["xmin"]) * (box["ymax"] - box["ymin"]))
+
+    def containment_ratio(inner, outer):
+        ix1 = max(inner["xmin"], outer["xmin"])
+        iy1 = max(inner["ymin"], outer["ymin"])
+        ix2 = min(inner["xmax"], outer["xmax"])
+        iy2 = min(inner["ymax"], outer["ymax"])
+        iw = max(0, ix2 - ix1)
+        ih = max(0, iy2 - iy1)
+        inter = iw * ih
+        return inter / max(1, box_area(inner))
+
+    ordered = sorted(
+        object_infos,
+        key=lambda o: representative_priority(o, router, target_label=None),
+        reverse=True,
+    )
+
+    kept = []
+    for obj in ordered:
+        obj_box = obj["box_2d"]
+        obj_area = box_area(obj_box)
+        obj_center = np.asarray(obj["world_pt"], dtype=np.float64)
+
+        obj_depth = float(obj_center[2])
+
+        drop = False
+        for parent in kept:
+            parent_box = parent["box_2d"]
+            parent_area = box_area(parent_box)
+            parent_center = np.asarray(parent["world_pt"], dtype=np.float64)
+            parent_depth = float(parent_center[2])
+
+            contain = containment_ratio(obj_box, parent_box)
+            area_ratio = obj_area / max(1.0, parent_area)
+            center_dist = float(np.linalg.norm(obj_center - parent_center))
+            depth_diff = abs(obj_depth - parent_depth)
+
+            if (
+                contain >= containment_threshold
+                and area_ratio <= area_ratio_threshold
+                and center_dist <= center_dist_threshold
+                and depth_diff <= depth_diff_threshold
+            ):
+                drop = True
+                break
+
+        if not drop:
+            kept.append(obj)
+
+    return kept
+
 def compute_axis_occlusion_caps(
     grid: WorkspaceGrid,
     source_mask: np.ndarray,
     occupancy_free: np.ndarray,
-) -> dict[str, np.ndarray]:
+    source_surface_mask: np.ndarray | None = None,
+    gap_fill_voxels: int = 2,
+) -> tuple[dict[str, np.ndarray], dict]:
     """
     Compute hard axis-aligned occlusion caps for all 6 directions:
       w_+x, w_-x, w_+y, w_-y, w_+z, w_-z
@@ -727,6 +917,13 @@ def compute_axis_occlusion_caps(
     """
     nx, ny, nz = source_mask.shape
     caps = {}
+
+    # Source footprint for debugging: this is the actual emission footprint we care about.
+    source_xy = None
+    if source_surface_mask is not None and np.any(source_surface_mask):
+        source_xy = np.any(source_surface_mask, axis=2)
+
+    occupancy_xy = np.any(source_mask, axis=2)
 
     # ------------------------------------------------------------
     # +X / -X  (support plane: y,z)
@@ -833,17 +1030,29 @@ def compute_axis_occlusion_caps(
 
     # ------------------------------------------------------------
     # +Z / -Z  (support plane: x,y)
+    # IMPORTANT:
+    # - support_xy should follow the true emission footprint
+    # - but ray start/end indices must come from the FULL source object,
+    #   otherwise the object can block itself.
     # ------------------------------------------------------------
-    support_xy = np.any(source_mask, axis=2)  # (nx, ny)
+    if source_surface_mask is not None and np.any(source_surface_mask):
+        support_xy = np.any(source_surface_mask, axis=2)  # true emission footprint
+    else:
+        support_xy = np.any(source_mask, axis=2)
+
     max_z_idx = np.full((nx, ny), -1, dtype=int)
     min_z_idx = np.full((nx, ny), nz, dtype=int)
 
     for i in range(nx):
         for j in range(ny):
-            zs = np.where(source_mask[i, j, :])[0]
-            if len(zs) > 0:
-                min_z_idx[i, j] = int(zs.min())
-                max_z_idx[i, j] = int(zs.max())
+            if not support_xy[i, j]:
+                continue
+
+            # IMPORTANT: use FULL source geometry here, not source_surface_mask
+            zs_full = np.where(source_mask[i, j, :])[0]
+            if len(zs_full) > 0:
+                min_z_idx[i, j] = int(zs_full.min())
+                max_z_idx[i, j] = int(zs_full.max())
 
     plus_z_block = np.full((nx, ny), np.inf, dtype=np.float64)
     minus_z_block = np.full((nx, ny), -np.inf, dtype=np.float64)
@@ -868,6 +1077,26 @@ def compute_axis_occlusion_caps(
                     first_idx = int(blocked[-1])
                     minus_z_block[i, j] = float(grid.z[first_idx])
 
+    # ------------------------------------------------------------
+    # Residual-strip cleanup inside source footprint
+    # Fill only small open gaps using nearest valid blocker column.
+    # ------------------------------------------------------------
+    z_gap_fill_voxels = 2  # start with 2; if still leaking, try 3
+
+    plus_z_block = fill_small_open_strips_2d(
+        plus_z_block,
+        support_xy,
+        max_gap_voxels=z_gap_fill_voxels,
+        invalid_fill_value=None,   # valid = finite
+    )
+
+    minus_z_block = fill_small_open_strips_2d(
+        minus_z_block,
+        support_xy,
+        max_gap_voxels=z_gap_fill_voxels,
+        invalid_fill_value=-np.inf,
+    )
+
     if np.any(support_xy):
         _, nearest_idx = ndimage.distance_transform_edt(~support_xy, return_indices=True)
         nearest_i = nearest_idx[0]
@@ -882,7 +1111,93 @@ def compute_axis_occlusion_caps(
         caps["w_+z"] = np.ones(grid.shape, dtype=bool)
         caps["w_-z"] = np.ones(grid.shape, dtype=bool)
 
-    return caps
+    finite_plus = np.isfinite(plus_z_block)
+    finite_minus = np.isfinite(minus_z_block)
+
+    support_cols = int(support_xy.sum())
+    plus_blocked_cols = int((finite_plus & support_xy).sum())
+    minus_blocked_cols = int((finite_minus & support_xy).sum())
+
+    finite_plus_after = np.isfinite(plus_z_block)
+    open_after = int((support_xy & (~finite_plus_after)).sum())
+    print(f"open source cols(+z) after fill = {open_after}")
+    print(f"z_gap_fill_voxels               = {z_gap_fill_voxels}")
+
+    print("\n--- PLUS/MINUS Z BLOCKER COLUMN DEBUG ---")
+    print(f"occupancy_xy columns         = {int(occupancy_xy.sum())}")
+    print(f"support_xy columns           = {support_cols}")
+
+    print(f"+z blocked columns(support)  = {plus_blocked_cols}")
+    print(f"-z blocked columns(support)  = {minus_blocked_cols}")
+
+    if support_cols > 0:
+        print(f"+z blocked fraction(support) = {plus_blocked_cols / support_cols:.4f}")
+        print(f"-z blocked fraction(support) = {minus_blocked_cols / support_cols:.4f}")
+
+    if source_xy is not None:
+        source_cols = int(source_xy.sum())
+        plus_blocked_source = int((finite_plus & source_xy).sum())
+        minus_blocked_source = int((finite_minus & source_xy).sum())
+
+        print(f"source_xy columns            = {source_cols}")
+        print(f"+z blocked columns(source)   = {plus_blocked_source}")
+        print(f"-z blocked columns(source)   = {minus_blocked_source}")
+
+        if source_cols > 0:
+            print(f"+z blocked fraction(source)  = {plus_blocked_source / source_cols:.4f}")
+            print(f"-z blocked fraction(source)  = {minus_blocked_source / source_cols:.4f}")
+
+        source_not_in_support = int((source_xy & (~support_xy)).sum())
+        support_not_in_source = int((support_xy & (~source_xy)).sum())
+
+        print(f"source_not_in_support cols   = {source_not_in_support}")
+        print(f"support_not_in_source cols   = {support_not_in_source}")
+
+        if source_not_in_support > 0:
+            print("WARNING: some source footprint columns are outside cap support footprint")
+
+        # Extra debug: where are the open source columns?
+        open_source_cols = source_xy & (~finite_plus)
+        open_count = int(open_source_cols.sum())
+        print(f"open source cols(+z)         = {open_count}")
+        if open_count > 0:
+            ii, jj = np.where(open_source_cols)
+            print(
+                f"open source x range(+z)      = "
+                f"{grid.x[ii].min():.4f} .. {grid.x[ii].max():.4f}"
+            )
+            print(
+                f"open source y range(+z)      = "
+                f"{grid.y[jj].min():.4f} .. {grid.y[jj].max():.4f}"
+            )
+    else:
+        print("source_xy columns            = none")
+
+    if plus_blocked_cols > 0:
+        vals = plus_z_block[finite_plus & support_xy]
+        print(f"+z blocker z range(support)  = {vals.min():.4f} .. {vals.max():.4f}")
+    else:
+        print("+z blocker z range(support)  = none")
+
+    if source_xy is not None and np.any(finite_plus & source_xy):
+        vals_src = plus_z_block[finite_plus & source_xy]
+        print(f"+z blocker z range(source)   = {vals_src.min():.4f} .. {vals_src.max():.4f}")
+    else:
+        print("+z blocker z range(source)   = none")
+
+    debug_info = {
+        "support_yz": support_yz,
+        "support_xz": support_xz,
+        "support_xy": support_xy,
+        "plus_x_block": plus_x_block,
+        "minus_x_block": minus_x_block,
+        "plus_y_block": plus_y_block,
+        "minus_y_block": minus_y_block,
+        "plus_z_block": plus_z_block,
+        "minus_z_block": minus_z_block,
+    }
+
+    return caps, debug_info
 
 def select_axis_occlusion_cap(
     axis_caps: dict[str, np.ndarray],
@@ -915,6 +1230,86 @@ def select_axis_occlusion_cap(
 
     # isotropic_sphere: keep hard cap disabled by default
     return np.ones_like(next(iter(axis_caps.values())), dtype=bool)
+
+def compose_axis_occlusion_cap(
+    axis_caps: dict[str, np.ndarray],
+    risk_params: dict,
+    weight_eps: float = 1e-8,
+) -> tuple[np.ndarray, list[str]]:
+    """
+    Compose hard occlusion caps over all ACTIVE directions.
+
+    Principle:
+    - If a direction has nonzero semantic weight, risk can propagate there.
+    - Therefore, if an obstacle exists along that direction, we hard-block it.
+    - Topology still shapes the soft field itself, but hard blocking is applied
+      to every active axis direction.
+
+    Returns:
+        hard_axis_cap: bool array, True = allowed, False = blocked
+        active_cap_keys: list of axis keys that participated in the composition
+    """
+    weights = risk_params.get("weights", {})
+
+    ordered_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
+    active_cap_keys = [
+        k for k in ordered_keys
+        if float(weights.get(k, 0.0)) > weight_eps and k in axis_caps
+    ]
+
+    if not active_cap_keys:
+        return np.ones_like(next(iter(axis_caps.values())), dtype=bool), []
+
+    hard_axis_cap = np.ones_like(next(iter(axis_caps.values())), dtype=bool)
+
+    for k in active_cap_keys:
+        hard_axis_cap &= axis_caps[k]
+
+    return hard_axis_cap, active_cap_keys
+
+def fill_small_open_strips_2d(
+    block_values_2d: np.ndarray,
+    support_mask_2d: np.ndarray,
+    max_gap_voxels: int = 2,
+    invalid_fill_value: float | None = None,
+) -> np.ndarray:
+    """
+    Fill small uncovered gaps inside a 2D support footprint by copying the
+    nearest valid blocker value.
+
+    block_values_2d:
+        2D array of blocker coordinates (e.g. plus_z_block).
+        Valid entries are finite (or custom-valid if invalid_fill_value used).
+    support_mask_2d:
+        Where source support exists.
+    max_gap_voxels:
+        Only fill gaps whose nearest valid blocker column is within this radius.
+    invalid_fill_value:
+        Optional sentinel like -np.inf for minus-direction arrays.
+    """
+    out = block_values_2d.copy()
+
+    if invalid_fill_value is None:
+        valid = np.isfinite(out)
+    else:
+        valid = out != invalid_fill_value
+
+    valid &= support_mask_2d
+    if not np.any(valid):
+        return out
+
+    # distance to nearest valid blocker column
+    dist, nearest_idx = ndimage.distance_transform_edt(
+        ~valid,
+        return_indices=True,
+    )
+
+    nearest_i = nearest_idx[0]
+    nearest_j = nearest_idx[1]
+
+    fillable = support_mask_2d & (~valid) & (dist <= max_gap_voxels)
+    out[fillable] = out[nearest_i[fillable], nearest_j[fillable]]
+    return out
 
 # ----------------------------------------------------------------------
 # Visualization helpers
@@ -1059,11 +1454,46 @@ def project_and_render_overlay(
 
     print(f"Successfully painted {drawn_voxels} high-risk voxels onto screen.")
 
+    # ------------------------------------------------------------------
+    # DEBUG: save raw pre-blur canvases
+    # ------------------------------------------------------------------
+    raw_positive = risk_canvas[risk_canvas > 0]
+    if raw_positive.size > 0:
+        raw_vis = risk_canvas.copy()
+        raw_vis = raw_vis / max(1e-6, float(raw_vis.max()))
+        raw_vis = (255.0 * raw_vis).astype(np.uint8)
+        cv2.imwrite("debug_risk_canvas_raw.png", raw_vis)
+
+    raw_alpha_vis = np.clip(alpha_canvas, 0.0, 1.0)
+    raw_alpha_vis = (255.0 * raw_alpha_vis).astype(np.uint8)
+    cv2.imwrite("debug_alpha_canvas_raw.png", raw_alpha_vis)
+
+    print("Saved pre-blur debug images: debug_risk_canvas_raw.png, debug_alpha_canvas_raw.png")
+
     risk_canvas = cv2.GaussianBlur(risk_canvas, (21, 21), 0)
     alpha_canvas = cv2.GaussianBlur(alpha_canvas, (21, 21), 0)
 
-    norm_risk = np.clip(risk_canvas, 0, 100) / 100.0
-    col_idx = ((1.0 - norm_risk) * 255).astype(np.uint8)
+    positive = risk_canvas[risk_canvas > 0]
+    scene_peak = float(positive.max()) if positive.size > 0 else 0.0
+
+    unit_anchor = 100.0
+    vis_max = unit_anchor if scene_peak <= unit_anchor else scene_peak
+
+    norm_abs = np.clip(risk_canvas, 0, vis_max) / vis_max
+
+    # low-risk visibility boost for display only
+    display_gamma = 1.0
+    norm_disp = np.power(norm_abs, display_gamma)
+
+    # alpha도 조금 올려서 너무 흐리지 않게
+    alpha_floor = 0.0
+    alpha_canvas = np.where(
+        norm_abs > 0,
+        alpha_floor + (1.0 - alpha_floor) * norm_disp,
+        0.0,
+    )
+
+    col_idx = ((1.0 - norm_disp) * 255).astype(np.uint8)
     color_heatmap = cv2.applyColorMap(col_idx, cv2.COLORMAP_RAINBOW)
 
     alpha_3d = np.clip(alpha_canvas, 0.0, 0.85)[..., np.newaxis]
@@ -1256,6 +1686,137 @@ def print_mask_depth_stats(
         f"max={float(z.max()):.4f}"
     )
 
+def compute_mask_centroid_px(mask_2d: np.ndarray) -> np.ndarray | None:
+    ys, xs = np.where(mask_2d > 0)
+    if len(xs) == 0:
+        return None
+    return np.array([float(xs.mean()), float(ys.mean())], dtype=np.float64)
+
+
+def compute_surface_center_world(
+    grid: WorkspaceGrid,
+    surface_mask: np.ndarray,
+) -> np.ndarray | None:
+    idx = np.argwhere(surface_mask)
+    if len(idx) == 0:
+        return None
+
+    center = np.array(
+        [
+            float(grid.x[idx[:, 0]].mean()),
+            float(grid.y[idx[:, 1]].mean()),
+            float(grid.z[idx[:, 2]].mean()),
+        ],
+        dtype=np.float64,
+    )
+    return center
+
+
+def project_world_point_to_image(
+    world_pt: np.ndarray,
+    intrinsics: dict,
+    world_pos: np.ndarray,
+    world_mat: np.ndarray,
+    image_shape: tuple[int, int],
+) -> np.ndarray | None:
+    if world_pt is None:
+        return None
+
+    h, w = image_shape
+    fx, fy = intrinsics["fx"], intrinsics["fy"]
+    cx, cy = w / 2.0, h / 2.0
+
+    world_mat_3x3 = world_mat.reshape(3, 3)
+    pt_world = np.asarray(world_pt, dtype=np.float64).reshape(3, 1)
+
+    pts_mj = world_mat_3x3.T @ (pt_world - world_pos.reshape(3, 1))
+
+    cv2mj_rot = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, -1.0],
+    ])
+    pt_cam = cv2mj_rot.T @ pts_mj
+
+    z = float(pt_cam[2, 0])
+    if z <= 0.01:
+        return None
+
+    u = float(fx * pt_cam[0, 0] / z + cx)
+    v = float(fy * pt_cam[1, 0] / z + cy)
+    return np.array([u, v], dtype=np.float64)
+
+
+def fmt_vec(vec, digits: int = 4) -> str:
+    if vec is None:
+        return "None"
+    return str(np.round(np.asarray(vec, dtype=np.float64), digits))
+
+def choose_adaptive_cap_margin_xy_voxels(
+    *,
+    support_mask_2d: np.ndarray,
+    plus_block_2d: np.ndarray,
+    grid_res: float,
+    max_margin_voxels: int = 4,
+) -> int:
+    """
+    Choose an adaptive x-y cap margin based on the residual uncovered fraction
+    in the support plane after gap filling.
+
+    Logic:
+    - no residual open columns -> 0
+    - tiny residual -> 1
+    - small residual -> 2
+    - moderate residual -> ~1.5 cm in voxels
+    - large residual -> clamp to max_margin_voxels
+    """
+    total_cols = int(support_mask_2d.sum())
+    if total_cols == 0:
+        return 0
+
+    valid_plus = np.isfinite(plus_block_2d)
+    open_cols = int((support_mask_2d & (~valid_plus)).sum())
+    open_frac = open_cols / max(total_cols, 1)
+
+    if open_cols == 0:
+        return 0
+    if open_frac <= 0.005:
+        return 1
+    if open_frac <= 0.02:
+        return 2
+    if open_frac <= 0.05:
+        return min(max_margin_voxels, max(2, int(round(0.015 / grid_res))))
+    return max_margin_voxels
+
+def apply_cap_margin_xy(
+    hard_axis_cap: np.ndarray,
+    margin_xy_voxels: int,
+) -> np.ndarray:
+    """
+    Dilate the blocked region only in x-y, not in z.
+    True = allowed, False = blocked
+    """
+    if margin_xy_voxels <= 0:
+        return hard_axis_cap
+
+    blocked = ~hard_axis_cap
+
+    structure = np.ones(
+        (
+            2 * margin_xy_voxels + 1,
+            2 * margin_xy_voxels + 1,
+            1,
+        ),
+        dtype=bool,
+    )
+
+    blocked = ndimage.binary_dilation(
+        blocked,
+        structure=structure,
+        iterations=1,
+    )
+    return ~blocked
+
 # ----------------------------------------------------------------------
 # Main pipeline
 # ----------------------------------------------------------------------
@@ -1269,6 +1830,7 @@ def run_pipeline(
     use_gt_blockers: bool = False,
     gt_blocker_geoms: list[str] | None = None,
     use_table_top_filter: bool = False,
+    prior_json_path: str = PRIOR_JSON_DEFAULT,
 ):
     if gt_blocker_geoms is None:
         gt_blocker_geoms = []
@@ -1283,6 +1845,7 @@ def run_pipeline(
     print(f"XML path: [{xml_path}]")
     print(f"GT blocker debug mode: [{'ON' if use_gt_blockers else 'OFF'}]\n")
     print(f"Table-top filter: [{'ON' if use_table_top_filter else 'OFF'}]\n")
+    print(f"Prior JSON path: [{prior_json_path}]")
 
     table_top_z = None
 
@@ -1330,37 +1893,16 @@ def run_pipeline(
     save_depth_debug_image(depth_metric, output_path="test_depth_debug.png")
 
     # ------------------------------------------------------------------
-    # 1) Scene perception
+    # 1) Router init first + prior-driven candidate filtering
     # ------------------------------------------------------------------
-    ai_detector = SemanticPerception()
+    if not Path(prior_json_path).exists():
+        raise FileNotFoundError(f"Prior JSON not found: {prior_json_path}")
 
-    if candidate_labels is None or len(candidate_labels) == 0:
-        candidate_labels = [
-            "power drill", "drill", "bowl", "ceramic bowl", "mixing bowl",
-            "cup", "mug", "glass", "container", "tray", "sink",
-            "laptop", "computer", "monitor", "phone", "tablet",
-            "table", "shelf", "wall", "box",
-        ]
-
-    detections = ai_detector.detect_scene_objects(
-        image_path="test_rgb.png",
-        candidate_labels=candidate_labels,
-        save_debug=True,
-        debug_dir="perception_debug",
-    )
-
-    if not detections:
-        print("No scene detections found.")
-        return
-
-    # ------------------------------------------------------------------
-    # 2) Router init + target filtering policy
-    # ------------------------------------------------------------------
     router = SemanticRouter(
-        json_path="data/semantic_risk_demo.json",
-        system_instruction=GEMINI_SYSTEM_INSTRUCTION,
+        json_path=prior_json_path,
+        system_instruction=SYSTEM_INSTRUCTION,
         llm_batch_callback=None,
-        # llm_batch_callback=gemini_batch_callback,
+        # llm_batch_callback=claude_batch_callback,
         persist_updates=False,
         # persist_updates=True,
         nearest_threshold=0.68,
@@ -1370,6 +1912,68 @@ def run_pipeline(
     )
 
     try:
+        pass1_candidates, pass2_candidates = build_candidate_labels(
+            manipulated_obj=manipulated_obj,
+            target_label=target_label,
+            user_candidate_labels=candidate_labels,
+            prior_json_path=prior_json_path,
+        )
+
+        # Fallback if prior JSON has no entry for this manipulated object
+        if not pass1_candidates:
+            if target_label.lower() != "auto":
+                pass1_candidates = [target_label]
+            elif candidate_labels:
+                pass1_candidates = list(candidate_labels)
+            else:
+                raise ValueError(
+                    "No detector candidates available from prior JSON or user candidate labels."
+                )
+
+        if not pass2_candidates:
+            pass2_candidates = list(pass1_candidates)
+
+        print("\n--- PRIOR-DRIVEN CANDIDATE FILTERING ---")
+        print("pass1_candidates:", pass1_candidates)
+        print("pass2_candidates:", pass2_candidates)
+
+        ai_detector = SemanticPerception()
+
+        def _run_detector_pass(candidate_list: list[str], debug_dir: str):
+            print(f"\n--- DETECTOR PASS | {debug_dir} ---")
+            print("candidate count:", len(candidate_list))
+            return ai_detector.detect_scene_objects(
+                image_path="test_rgb.png",
+                candidate_labels=candidate_list,
+                save_debug=True,
+                debug_dir=debug_dir,
+            )
+
+        def _target_hit(ds: list[dict]) -> bool:
+            if target_label.lower() == "auto":
+                return True
+
+            target_canon = canonicalize_label_for_filter(router, target_label)
+            for det in ds:
+                if canonicalize_label_for_filter(router, det["label"]) == target_canon:
+                    return True
+            return False
+
+        detections = _run_detector_pass(pass1_candidates, "perception_debug/pass1")
+        detection_pass_used = "pass1"
+        fallback_used = False
+
+        if (not detections) or (target_label.lower() != "auto" and not _target_hit(detections)):
+            if pass2_candidates != pass1_candidates:
+                print("\nPass 1 missed target or returned no detections. Running fallback pass.")
+                detections = _run_detector_pass(pass2_candidates, "perception_debug/pass2")
+                detection_pass_used = "pass2"
+                fallback_used = True
+
+        if not detections:
+            print("No scene detections found after fallback.")
+            return
+
         # IMPORTANT:
         # Keep all detections for occupancy / blockers.
         occupancy_detections = list(detections)
@@ -1386,6 +1990,8 @@ def run_pipeline(
         print("\n--- DETECTION FILTER DEBUG ---")
         print("target_label:", target_label)
         print("hazard_target_canon:", hazard_target_canon)
+        print("detection_pass_used:", detection_pass_used)
+        print("fallback_used:", fallback_used)
         print("all detected labels:", [det["label"] for det in occupancy_detections])
 
         router.prefetch_scene_pairs(
@@ -1443,6 +2049,7 @@ def run_pipeline(
                     "score": float(det["score"]),
                     "box_2d": box,
                     "mask_2d": mask_2d,
+                    "seg_centroid_px": compute_mask_centroid_px(mask_2d),
                     "world_points": world_points,
                     "world_pt": world_pt,
                     "source": det.get("source", "proposal"),
@@ -1468,6 +2075,15 @@ def run_pipeline(
             point_dist_thresh=0.03,
             bbox_iou_thresh=0.25,
             target_label=(None if target_label.lower() == "auto" else target_label),
+        )
+
+        object_infos = suppress_contained_duplicate_objects(
+            object_infos=object_infos,
+            router=router,
+            containment_threshold=0.80,
+            area_ratio_threshold=0.45,
+            center_dist_threshold=0.15,
+            depth_diff_threshold=0.08,
         )
 
         print("\n--- AFTER 3D CANONICAL DEDUPE ---")
@@ -1520,27 +2136,60 @@ def run_pipeline(
 
         for obj in object_infos:
             # Conservative geometry for topology / occupancy / FMM
-            occupancy_mask = world_points_to_voxel_mask(
+            # ============================================================
+            # 2) geometry loop: keep raw source mask separate from blocker
+            # ============================================================
+            source_raw_mask = world_points_to_voxel_mask(
                 grid=grid,
                 world_points=obj["world_points"],
                 dilation_iters=1,
             )
-            occupancy_mask = keep_largest_connected_component(occupancy_mask, connectivity=1)
+            source_raw_mask = keep_largest_connected_component(source_raw_mask, connectivity=1)
 
-            if not np.any(occupancy_mask):
-                print(f"Skipping '{obj['label']}' because occupancy mask is empty.")
+            if not np.any(source_raw_mask):
+                print(f"Skipping '{obj['label']}' because source_raw_mask is empty.")
                 continue
 
-            occupancy_surface_mask = extract_top_surface_mask(occupancy_mask, band_voxels=1)
-            occupancy_bbox_3d = voxel_mask_to_bbox(grid, occupancy_mask)
-
-            # Precise source surface only for emission shaping
+            occupancy_surface_mask = extract_top_surface_mask(source_raw_mask, band_voxels=1)
+            occupancy_bbox_3d = voxel_mask_to_bbox(grid, source_raw_mask)
             source_surface_mask = clean_source_surface_mask(occupancy_surface_mask)
 
-            obj["occupancy_mask"] = occupancy_mask
+            blocker_solid_mask = build_blocker_solid_mask(
+                occupancy_surface_mask=occupancy_surface_mask,
+                occupancy_bbox_3d=occupancy_bbox_3d,
+                grid=grid,
+                pad_xy_voxels=2,   # start small
+            )
+
+            obj["source_raw_mask"] = source_raw_mask
+            obj["occupancy_mask"] = source_raw_mask          # keep old key for compatibility if needed
             obj["occupancy_surface_mask"] = occupancy_surface_mask
-            obj["occupancy_bbox_3d"] = occupancy_bbox_3d
             obj["source_surface_mask"] = source_surface_mask
+            obj["occupancy_bbox_3d"] = occupancy_bbox_3d
+            obj["blocker_solid_mask"] = blocker_solid_mask
+
+            occ_center_world = compute_surface_center_world(grid, occupancy_surface_mask)
+            src_center_world = compute_surface_center_world(grid, source_surface_mask)
+
+            occ_center_px = project_world_point_to_image(
+                occ_center_world,
+                intrinsics=intrinsics,
+                world_pos=world_pos,
+                world_mat=world_mat,
+                image_shape=depth_metric.shape,
+            )
+            src_center_px = project_world_point_to_image(
+                src_center_world,
+                intrinsics=intrinsics,
+                world_pos=world_pos,
+                world_mat=world_mat,
+                image_shape=depth_metric.shape,
+            )
+
+            obj["occupancy_surface_center_world"] = occ_center_world
+            obj["source_surface_center_world"] = src_center_world
+            obj["occupancy_surface_center_px"] = occ_center_px
+            obj["source_surface_center_px"] = src_center_px
 
         object_infos = [
             obj for obj in object_infos
@@ -1568,6 +2217,33 @@ def run_pipeline(
                     print(f"  occupancy surface z range = {z_occ.min():.4f} .. {z_occ.max():.4f}")
                 if z_src.size > 0:
                     print(f"  source surface z range    = {z_src.min():.4f} .. {z_src.max():.4f}")
+
+            print(f"  seg_centroid_px          = {fmt_vec(obj.get('seg_centroid_px'), 2)}")
+            print(f"  seg_center_world         = {fmt_vec(obj.get('world_pt'), 4)}")
+            print(f"  occ_surface_center_px    = {fmt_vec(obj.get('occupancy_surface_center_px'), 2)}")
+            print(f"  src_surface_center_px    = {fmt_vec(obj.get('source_surface_center_px'), 2)}")
+            print(f"  occ_surface_center_world = {fmt_vec(obj.get('occupancy_surface_center_world'), 4)}")
+            print(f"  src_surface_center_world = {fmt_vec(obj.get('source_surface_center_world'), 4)}")
+
+            seg_px = obj.get("seg_centroid_px", None)
+            occ_px = obj.get("occupancy_surface_center_px", None)
+            src_px = obj.get("source_surface_center_px", None)
+
+            if seg_px is not None and occ_px is not None:
+                print(f"  delta_occ_minus_seg_px   = {fmt_vec(occ_px - seg_px, 2)}")
+            if seg_px is not None and src_px is not None:
+                print(f"  delta_src_minus_seg_px   = {fmt_vec(src_px - seg_px, 2)}")
+
+            if obj.get("occupancy_surface_center_world") is not None:
+                print(
+                    f"  delta_occ_minus_seg_world= "
+                    f"{fmt_vec(obj['occupancy_surface_center_world'] - obj['world_pt'], 4)}"
+                )
+            if obj.get("source_surface_center_world") is not None:
+                print(
+                    f"  delta_src_minus_seg_world= "
+                    f"{fmt_vec(obj['source_surface_center_world'] - obj['world_pt'], 4)}"
+                )
         print("--- END DEBUG ---")
 
         if not object_infos:
@@ -1636,25 +2312,69 @@ def run_pipeline(
             scene_role = risk_params.get("scene_role", "hazard_target")
             obj["scene_role"] = scene_role
 
+            # ------------------------------------------------------------
+            # Build source-specific occupancy:
+            # - current source object uses raw occupancy_mask
+            # - all other objects use conservative blocker_mask if available
+            # ------------------------------------------------------------
+            # ============================================================
+            # 3) local occupancy: source uses raw, others use blocker_solid
+            # ============================================================
+            source_specific_masks = []
+            for other in object_infos:
+                if other is obj:
+                    source_specific_masks.append(other["source_raw_mask"])
+                else:
+                    source_specific_masks.append(other["blocker_solid_mask"])
+
+            occupancy_free_local = build_multi_object_occupancy(
+                grid=grid,
+                object_masks=source_specific_masks,
+                table_top_z=table_top_z,
+            )
+
+            print("[ROUTER PRIOR]", risk_params)
+
             d_euc, d_geo, seed_mask = grid.compute_boundary_seeded_distances(
-                object_mask=obj["occupancy_mask"],
-                occupancy_grid=occupancy_free,
+                object_mask=obj["source_raw_mask"],
+                occupancy_grid=occupancy_free_local,
                 connectivity=1,
             )
             A_field = shielding_ratio(d_geo, d_euc)
 
-            axis_caps = compute_axis_occlusion_caps(
+            axis_caps, axis_debug = compute_axis_occlusion_caps(
                 grid=grid,
-                source_mask=obj["occupancy_mask"],
-                occupancy_free=occupancy_free,
+                source_mask=obj["source_raw_mask"],
+                occupancy_free=occupancy_free_local,
+                source_surface_mask=obj.get("source_surface_mask", None),
+                gap_fill_voxels=2,
             )
 
-            hard_axis_cap = select_axis_occlusion_cap(
+            hard_axis_cap, active_cap_keys = compose_axis_occlusion_cap(
                 axis_caps=axis_caps,
                 risk_params=risk_params,
             )
 
+            cap_margin_xy_voxels = choose_adaptive_cap_margin_xy_voxels(
+                support_mask_2d=axis_debug["support_xy"],
+                plus_block_2d=axis_debug["plus_z_block"],
+                grid_res=grid.res,
+                max_margin_voxels=4,
+            )
+
+            hard_axis_cap = apply_cap_margin_xy(
+                hard_axis_cap,
+                margin_xy_voxels=cap_margin_xy_voxels,
+            )
+
+            valid_plus = np.isfinite(axis_debug["plus_z_block"])
+            support_xy = axis_debug["support_xy"]
+            open_cols_after = int((support_xy & (~valid_plus)).sum())
+
             print("\n--- AXIS OCCLUSION CAP DEBUG ---")
+            print("active_cap_keys:", active_cap_keys)
+            print("adaptive cap_margin_xy_voxels:", cap_margin_xy_voxels)
+            print("open source cols(+z) after fill:", open_cols_after)
             print("allowed fraction:", float(hard_axis_cap.mean()))
             print("blocked fraction:", 1.0 - float(hard_axis_cap.mean()))
 
@@ -1676,18 +2396,60 @@ def run_pipeline(
                     de = float(d_euc[ix, iy, iz])
                     dg = float(d_geo[ix, iy, iz])
                     af = float(A_field[ix, iy, iz])
+                    free = int(occupancy_free_local[ix, iy, iz])
+                    cap_here = int(hard_axis_cap[ix, iy, iz])
 
                     print(
                         f"[{name}] pt={np.round(pt, 4)} "
-                        f"d_euc={de:.4f} d_geo={dg:.4f} A={af:.4f}"
+                        f"idx=({ix},{iy},{iz}) "
+                        f"free={free} "
+                        f"d_euc={de:.4f} d_geo={dg:.4f} A={af:.4f} "
+                        f"cap={cap_here}"
                     )
 
-            gamma = float(risk_params.get("receptacle_attenuation", 1.0))
-            base_risk = 100.0 * gamma
+                print("\n--- PROBE VS BLOCKER BBOX DEBUG ---")
+                for name, pt in probes:
+                    print(f"[{name}] pt={np.round(pt, 4)}")
+
+                    for other in object_infos:
+                        if other is obj:
+                            continue
+
+                        bb = other["occupancy_bbox_3d"]
+                        inside = (
+                            (bb[0] <= pt[0] <= bb[1]) and
+                            (bb[2] <= pt[1] <= bb[3]) and
+                            (bb[4] <= pt[2] <= bb[5])
+                        )
+
+                        print(
+                            f"    blocker={other['label']:<12} "
+                            f"inside_bbox={inside} "
+                            f"bbox={tuple(round(v, 4) for v in bb)}"
+                        )
+
+            attenuation = float(risk_params.get("receptacle_attenuation", 1.0))
+            object_max_risk_score = get_object_max_risk_score(risk_params)
+
+            base_risk = 100.0 * attenuation * object_max_risk_score
+
+            risk_params_for_field = dict(risk_params)
+            risk_params_for_field["weights"] = normalize_weights_for_shape(
+                risk_params.get("weights", {})
+            )
+
+            print(f"[RISK PARAMS FIELD] keys={sorted(risk_params_for_field.keys())}")
+            print(f"[RISK PARAMS FIELD] radius_m={risk_params_for_field.get('radius_m', None)}")
+
+            print(f"[BASE_RISK DEBUG] {obj['label']} base_risk={base_risk:.4f}")
+            print(f"[WEIGHT DEBUG] max_score={get_object_max_risk_score(obj):.4f}")
+
+            print(f"[RISK PARAMS RAW] keys={sorted(risk_params.keys())}")
+            print(f"[RISK PARAMS RAW] radius_m={risk_params.get('radius_m', None)}")
 
             V_object = build_risk_field_from_params(
                 grid=grid,
-                risk_params=risk_params,
+                risk_params=risk_params_for_field,
                 d_geo=d_geo,
                 A_field=A_field,
                 base_risk=base_risk,
@@ -1696,6 +2458,15 @@ def run_pipeline(
                 surface_mask=obj["occupancy_surface_mask"],
                 footprint_mask=np.any(obj["occupancy_surface_mask"], axis=2),
             )
+
+            print(f"[RISK STATS] {obj['label']}")
+            print("  max =", float(np.max(V_object)))
+            print("  p99 =", float(np.percentile(V_object, 99)))
+            print("  p95 =", float(np.percentile(V_object, 95)))
+            print("  p90 =", float(np.percentile(V_object, 90)))
+            print("  voxels > 0.01 =", int(np.sum(V_object > 0.01)))
+            print("  voxels > 0.05 =", int(np.sum(V_object > 0.05)))
+            print("  voxels > 0.10 =", int(np.sum(V_object > 0.10)))
 
             # hard directional shadow cap
             V_object = V_object * hard_axis_cap.astype(np.float64)
@@ -1756,7 +2527,7 @@ def run_pipeline(
                 selected_cap_direction = max(all_keys, key=lambda k: float(weights.get(k, 0.0)))
 
             print("\n--- AXIS OCCLUSION CAP DEBUG ---")
-            print("selected_cap_direction:", selected_cap_direction)
+            print("active_cap_keys:", active_cap_keys)
             print("allowed fraction:", float(hard_axis_cap.mean()))
             print("blocked fraction:", 1.0 - float(hard_axis_cap.mean()))
 
@@ -1768,7 +2539,7 @@ def run_pipeline(
                 hard_axis_cap=hard_axis_cap,
                 V_object=V_object,
                 occupancy_free=occupancy_free,
-                center_world_pt=obj["world_pt"],
+                center_world_pt=obj.get("occupancy_surface_center_world", obj["world_pt"]),
                 offsets=(0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32),
                 title=f"FINAL RISK PROFILE | {obj['label']}",
             )
@@ -1791,11 +2562,14 @@ def run_pipeline(
             print("No scene_role='hazard_target' objects were found. Final risk field will be zeros.")
             V_final = np.zeros(grid.shape, dtype=np.float32)
         else:
-            V_final = compute_logsumexp_superposition(
+            V_final = compute_sum_superposition(
                 hazard_fields,
-                beta=10.0,
-                v_max=100.0,
+                v_max=300.0,
             )
+            
+        scene_max_risk_score = float(V_final.max())
+        print(f"Scene max risk value: {scene_max_risk_score:.4f}")
+        print(f"Scene max risk score: {scene_max_risk_score / 100.0:.4f}")
 
         # ------------------------------------------------------------------
         # 6) Save Loop 1 outputs
@@ -1809,6 +2583,11 @@ def run_pipeline(
                 "debug_oracle_blockers_enabled": bool(use_gt_blockers),
                 "debug_oracle_blockers": gt_blocker_info,
                 "detected_objects": per_object_debug,
+                "prior_json_path": prior_json_path,
+                "pass1_candidates": pass1_candidates,
+                "pass2_candidates": pass2_candidates,
+                "detection_pass_used": detection_pass_used,
+                "fallback_used": fallback_used,
             },
             ensure_ascii=False,
         )
@@ -1909,6 +2688,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Optional debug filter only. Restrict detections labeled 'table' to the MuJoCo table-top plane.",
     )
+    parser.add_argument(
+        "--prior-json-path",
+        type=str,
+        default=PRIOR_JSON_DEFAULT,
+        help="Path to semantic prior JSON used for prior-driven candidate filtering.",
+    )
     args = parser.parse_args()
 
     run_pipeline(
@@ -1920,4 +2705,5 @@ if __name__ == "__main__":
         use_gt_blockers=args.use_gt_blockers,
         gt_blocker_geoms=args.gt_blocker_geoms,
         use_table_top_filter=args.use_table_top_filter,
+        prior_json_path=args.prior_json_path,
     )

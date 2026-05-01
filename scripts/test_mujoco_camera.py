@@ -7,7 +7,7 @@ import os
 from semantic_safety.perception_2d3d.mujoco_camera import MujocoCamera
 
 def run_camera_test():
-    xml_path = "tabletop.xml"
+    xml_path = "wine_and_laptop.xml"
     
     if not os.path.exists(xml_path):
         print(f"Error: Could not find '{xml_path}'. Make sure it is saved in the root directory.")
