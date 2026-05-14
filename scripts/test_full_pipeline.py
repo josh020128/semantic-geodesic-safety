@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 
 import cv2
 import re
@@ -16,7 +17,6 @@ from semantic_safety.metric_propagation.fmm_distance import WorkspaceGrid
 from semantic_safety.risk_field.superposition import (
     shielding_ratio,
     compute_logsumexp_superposition,
-    compute_hybrid_superposition,
     compute_sum_superposition,
 )
 from semantic_safety.risk_field.templates import build_risk_field_from_params
@@ -88,16 +88,27 @@ def get_object_max_risk_score(risk_params: dict) -> float:
     weights = risk_params.get("weights", {})
     if not weights:
         return 1.0
-    return float(np.clip(max(float(v) for v in weights.values()), 0.0, 1.0))
+    vals = []
+    for v in weights.values():
+        if isinstance(v, str) and v.strip().lower() in {"inf", "+inf", "infinity", "+infinity"}:
+            vals.append(1.0)
+        else:
+            vals.append(float(v))
+    return float(np.clip(max(vals) if vals else 1.0, 0.0, 1.0))
 
 
-def normalize_weights_for_shape(weights: dict) -> dict:
-    if not weights:
-        return weights
-    m = max(float(v) for v in weights.values())
-    if m <= 1e-8:
-        return weights
-    return {k: float(v) / m for k, v in weights.items()}
+def _parse_weight_value(v):
+    if isinstance(v, str):
+        s = v.strip().lower()
+        if s in {"inf", "+inf", "infinity", "+infinity"}:
+            return np.inf
+    return float(v)
+
+
+def _parse_weights_dict(weights_dict: dict | None) -> dict:
+    if not weights_dict:
+        return {}
+    return {k: _parse_weight_value(v) for k, v in weights_dict.items()}
 
 # ----------------------------------------------------------------------
 # Geometry helpers
@@ -634,19 +645,16 @@ def gravity_column_from_surface_mask(
     grid: WorkspaceGrid,
     top_surface_mask: np.ndarray,
     A_field: np.ndarray,
-    base_risk: float,
     w_plus_z: float,
-    lateral_decay: str = "moderate",
+    lateral_alpha: float = 10.0,
 ):
     """
-    Gravity-aware upward field from the full top surface footprint.
-    This avoids center-only +z risk for wide planar/support objects.
+    Persistent upward field from the full top surface footprint.
+    No vertical decay. Only valid above the source top surface.
     """
     footprint = np.any(top_surface_mask, axis=2)
     if not np.any(footprint):
         return np.zeros(grid.shape, dtype=np.float64)
-
-    d_xy = ndimage.distance_transform_edt(~footprint) * grid.res
 
     z_top_field = np.full(grid.shape[:2], -np.inf, dtype=np.float64)
     nx, ny, _ = top_surface_mask.shape
@@ -656,20 +664,15 @@ def gravity_column_from_surface_mask(
             if len(z_idx) > 0:
                 z_top_field[i, j] = grid.z[int(z_idx.max())]
 
-    valid_cols = footprint
     z_top_3d = z_top_field[:, :, None]
-    above_mask = valid_cols[:, :, None] & (grid.Z >= z_top_3d)
+    above_mask = footprint[:, :, None] & (grid.Z >= z_top_3d)
 
-    lateral_alpha_map = {
-        "narrow": 18.0,
-        "moderate": 10.0,
-        "wide": 5.0,
-    }
-    alpha_xy = lateral_alpha_map.get(lateral_decay, 10.0)
-
+    # mild lateral decay from the footprint, similar to legacy behavior
+    d_xy = ndimage.distance_transform_edt(~footprint) * grid.res
     d_xy_3d = d_xy[:, :, None]
-    V = base_risk * float(w_plus_z) * A_field * np.exp(-alpha_xy * d_xy_3d)
-    V *= above_mask.astype(np.float64)
+
+    V = float(w_plus_z) * A_field * np.exp(-float(lateral_alpha) * d_xy_3d)
+    V = V * above_mask.astype(np.float64)
     V[np.isnan(V)] = 0.0
     return V
 
@@ -1213,19 +1216,19 @@ def select_axis_occlusion_cap(
     - isotropic_sphere: do not hard-cap by default (keep soft geodesic attenuation only)
     """
     topology = risk_params.get("topology_template", "isotropic_sphere")
-    weights = risk_params.get("weights", {})
+    weights = _parse_weights_dict(risk_params.get("weights", {}))
 
     if topology == "upward_vertical_cone":
         return axis_caps["w_+z"]
 
     if topology == "forward_directional_cone":
         horiz_keys = ["w_+x", "w_-x", "w_+y", "w_-y"]
-        dominant = max(horiz_keys, key=lambda k: float(weights.get(k, 0.0)))
+        dominant = max(horiz_keys, key=lambda k: (1.0 if np.isinf(weights.get(k, 0.0)) else float(weights.get(k, 0.0))))
         return axis_caps[dominant]
 
     if topology == "planar_half_space":
         all_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
-        dominant = max(all_keys, key=lambda k: float(weights.get(k, 0.0)))
+        dominant = max(all_keys, key=lambda k: (1.0 if np.isinf(weights.get(k, 0.0)) else float(weights.get(k, 0.0))))
         return axis_caps[dominant]
 
     # isotropic_sphere: keep hard cap disabled by default
@@ -1249,12 +1252,12 @@ def compose_axis_occlusion_cap(
         hard_axis_cap: bool array, True = allowed, False = blocked
         active_cap_keys: list of axis keys that participated in the composition
     """
-    weights = risk_params.get("weights", {})
+    weights = _parse_weights_dict(risk_params.get("weights", {}))
 
     ordered_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
     active_cap_keys = [
         k for k in ordered_keys
-        if float(weights.get(k, 0.0)) > weight_eps and k in axis_caps
+        if ((np.isinf(weights.get(k, 0.0))) or (float(weights.get(k, 0.0)) > weight_eps)) and k in axis_caps
     ]
 
     if not active_cap_keys:
@@ -1323,7 +1326,11 @@ def draw_segmentation_by_attenuation(
     output_path: str = "segmentation_attenuation_overlay.png",
 ):
     """
-    Color each object's 2D segmentation by receptacle_attenuation.
+    Color each object's 2D segmentation by semantic weight strength.
+
+    Visualization rule:
+    - finite weights use max in [0, 1]
+    - any "inf" direction is treated as 1.0
     """
     canvas = bgr_image.copy()
 
@@ -1334,9 +1341,15 @@ def draw_segmentation_by_attenuation(
         if mask is None or risk_params is None:
             continue
 
-        att = float(risk_params.get("receptacle_attenuation", 1.0))
-        att = float(np.clip(att, 0.1, 1.0))
-        t = (att - 0.1) / 0.9
+        weights = _parse_weights_dict(risk_params.get("weights", {}))
+        has_inf = any(np.isinf(v) for v in weights.values())
+
+        finite_max = 0.0
+        for v in weights.values():
+            if np.isfinite(v):
+                finite_max = max(finite_max, float(np.clip(v, 0.0, 1.0)))
+
+        t = 1.0 if has_inf else float(np.clip(finite_max, 0.0, 1.0))
 
         color = np.array([
             int(255 * (1.0 - t)),
@@ -1355,7 +1368,7 @@ def draw_segmentation_by_attenuation(
         cv2.rectangle(canvas, (box["xmin"], box["ymin"]), (box["xmax"], box["ymax"]), (0, 0, 255), 2)
         cv2.putText(
             canvas,
-            f"{label} | att={att:.2f}",
+            f"{label} | w={'inf' if has_inf else f'{finite_max:.2f}'}",
             (box["xmin"], max(20, box["ymin"] - 10)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.55,
@@ -1364,7 +1377,7 @@ def draw_segmentation_by_attenuation(
         )
 
     cv2.imwrite(output_path, canvas)
-    print(f"Saved segmentation attenuation overlay to '{output_path}'.")
+    print(f"Saved segmentation semantic-weight overlay to '{output_path}'.")
 
 
 def project_and_render_overlay(
@@ -1387,7 +1400,9 @@ def project_and_render_overlay(
     fx, fy = intrinsics["fx"], intrinsics["fy"]
     cx, cy = w / 2.0, h / 2.0
 
-    valid_mask = V_final > 2.0
+    # New scale assumption: V_final is typically in [0, 1] (soft) and can exceed 1 after summation.
+    # For visualization, we use a 0..1-centric threshold.
+    valid_mask = V_final > 0.10
     pts_world = np.vstack((X[valid_mask], Y[valid_mask], Z[valid_mask]))
     risks = V_final[valid_mask]
 
@@ -1448,7 +1463,7 @@ def project_and_render_overlay(
                 radius = max(2, int(fx * res * 1.0 / z))
                 cv2.circle(risk_canvas, (px, py), radius, float(r), -1)
 
-                alpha_val = min(0.7, max(0.0, (r - 5.0) / 85.0))
+                alpha_val = float(np.clip((r - 0.10) / 0.90, 0.0, 1.0)) * 0.70
                 cv2.circle(alpha_canvas, (px, py), radius, float(alpha_val), -1)
                 drawn_voxels += 1
 
@@ -1476,7 +1491,7 @@ def project_and_render_overlay(
     positive = risk_canvas[risk_canvas > 0]
     scene_peak = float(positive.max()) if positive.size > 0 else 0.0
 
-    unit_anchor = 100.0
+    unit_anchor = 1.0
     vis_max = unit_anchor if scene_peak <= unit_anchor else scene_peak
 
     norm_abs = np.clip(risk_canvas, 0, vis_max) / vis_max
@@ -1831,6 +1846,8 @@ def run_pipeline(
     gt_blocker_geoms: list[str] | None = None,
     use_table_top_filter: bool = False,
     prior_json_path: str = PRIOR_JSON_DEFAULT,
+    *,
+    time_risk_voxel_map: bool = True,
 ):
     if gt_blocker_geoms is None:
         gt_blocker_geoms = []
@@ -2124,6 +2141,8 @@ def run_pipeline(
         # ------------------------------------------------------------------
         # 4) Global voxel workspace
         # ------------------------------------------------------------------
+        _risk_voxel_map_t0 = time.perf_counter() if time_risk_voxel_map else None
+
         world_pts = np.concatenate([obj["world_points"] for obj in object_infos], axis=0)
         res = 0.004
         bounds = build_global_workspace_bounds(
@@ -2248,6 +2267,12 @@ def run_pipeline(
 
         if not object_infos:
             print("No valid voxelized objects remained.")
+            if time_risk_voxel_map and _risk_voxel_map_t0 is not None:
+                print(
+                    "[TIMING] risk voxel map (global grid + voxelization + occupancy + field + "
+                    f"superposition): {time.perf_counter() - _risk_voxel_map_t0:.4f}s "
+                    "(ended early: no valid voxelized objects)"
+                )
             return
 
         occupancy_masks = [obj["occupancy_mask"] for obj in object_infos]
@@ -2308,9 +2333,6 @@ def run_pipeline(
         for obj in hazard_object_infos:
             risk_params = router.get_risk_parameters(manipulated_obj, obj["label"])
             obj["risk_params"] = risk_params
-
-            scene_role = risk_params.get("scene_role", "hazard_target")
-            obj["scene_role"] = scene_role
 
             # ------------------------------------------------------------
             # Build source-specific occupancy:
@@ -2428,61 +2450,57 @@ def run_pipeline(
                             f"bbox={tuple(round(v, 4) for v in bb)}"
                         )
 
-            attenuation = float(risk_params.get("receptacle_attenuation", 1.0))
-            object_max_risk_score = get_object_max_risk_score(risk_params)
-
-            base_risk = 100.0 * attenuation * object_max_risk_score
+            weights_parsed = _parse_weights_dict(risk_params.get("weights", {}))
+            w_plus_z = weights_parsed.get("w_+z", 0.0)
 
             risk_params_for_field = dict(risk_params)
-            risk_params_for_field["weights"] = normalize_weights_for_shape(
-                risk_params.get("weights", {})
-            )
+            # Backward-compat shim: some priors may still contain radius_m.
+            if "sigma_m" not in risk_params_for_field and "radius_m" in risk_params_for_field:
+                risk_params_for_field["sigma_m"] = float(risk_params_for_field.get("radius_m"))
 
             print(f"[RISK PARAMS FIELD] keys={sorted(risk_params_for_field.keys())}")
-            print(f"[RISK PARAMS FIELD] radius_m={risk_params_for_field.get('radius_m', None)}")
-
-            print(f"[BASE_RISK DEBUG] {obj['label']} base_risk={base_risk:.4f}")
-            print(f"[WEIGHT DEBUG] max_score={get_object_max_risk_score(obj):.4f}")
+            print(f"[RISK PARAMS FIELD] sigma_m={risk_params_for_field.get('sigma_m', None)}")
+            print(f"[WEIGHT DEBUG] max_score={get_object_max_risk_score(risk_params):.4f}")
 
             print(f"[RISK PARAMS RAW] keys={sorted(risk_params.keys())}")
-            print(f"[RISK PARAMS RAW] radius_m={risk_params.get('radius_m', None)}")
+            print(f"[RISK PARAMS RAW] sigma_m={risk_params.get('sigma_m', None)}")
 
-            V_object = build_risk_field_from_params(
+            V_object_soft, _semantic_hard_mask_unused, field_debug = build_risk_field_from_params(
                 grid=grid,
                 risk_params=risk_params_for_field,
                 d_geo=d_geo,
                 A_field=A_field,
-                base_risk=base_risk,
                 bbox=obj["occupancy_bbox_3d"],
-                object_mask=obj["occupancy_mask"],
-                surface_mask=obj["occupancy_surface_mask"],
-                footprint_mask=np.any(obj["occupancy_surface_mask"], axis=2),
+                source_mask=obj["source_raw_mask"],
+                surface_mask=obj["source_surface_mask"],
             )
 
             print(f"[RISK STATS] {obj['label']}")
-            print("  max =", float(np.max(V_object)))
-            print("  p99 =", float(np.percentile(V_object, 99)))
-            print("  p95 =", float(np.percentile(V_object, 95)))
-            print("  p90 =", float(np.percentile(V_object, 90)))
-            print("  voxels > 0.01 =", int(np.sum(V_object > 0.01)))
-            print("  voxels > 0.05 =", int(np.sum(V_object > 0.05)))
-            print("  voxels > 0.10 =", int(np.sum(V_object > 0.10)))
+            print("  max =", float(np.max(V_object_soft)))
+            print("  p99 =", float(np.percentile(V_object_soft, 99)))
+            print("  p95 =", float(np.percentile(V_object_soft, 95)))
+            print("  p90 =", float(np.percentile(V_object_soft, 90)))
+            print("  voxels > 0.01 =", int(np.sum(V_object_soft > 0.01)))
+            print("  voxels > 0.05 =", int(np.sum(V_object_soft > 0.05)))
+            print("  voxels > 0.10 =", int(np.sum(V_object_soft > 0.10)))
 
             # hard directional shadow cap
-            V_object = V_object * hard_axis_cap.astype(np.float64)
+            V_object_soft = V_object_soft * hard_axis_cap.astype(np.float64)
 
-            if risk_params.get("vertical_rule", "standard_decay") == "gravity_column":
-                V_surface = gravity_column_from_surface_mask(
+            V_inf_z = np.zeros(grid.shape, dtype=np.float64)
+            if np.isinf(w_plus_z):
+                V_inf_z = gravity_column_from_surface_mask(
                     grid=grid,
                     top_surface_mask=obj["source_surface_mask"],
                     A_field=A_field,
-                    base_risk=base_risk,
-                    w_plus_z=float(risk_params.get("weights", {}).get("w_+z", 0.0)),
-                    lateral_decay=risk_params.get("lateral_decay", "moderate"),
+                    w_plus_z=1.0,
+                    lateral_alpha=10.0,
                 )
+                V_inf_z = V_inf_z * hard_axis_cap.astype(np.float64)
 
-                V_surface = V_surface * hard_axis_cap.astype(np.float64)
-                V_object = np.maximum(V_object, V_surface)
+            # Conservative merge: inf-column overrides where it exists,
+            # but does not enlarge the field by summation elsewhere.
+            V_object = np.maximum(V_object_soft, V_inf_z)
 
             obj["d_euc"] = d_euc
             obj["d_geo"] = d_geo
@@ -2491,40 +2509,22 @@ def run_pipeline(
             obj["V_object"] = V_object
 
             print(f"\n[{obj['label']}]")
-            print(f"  topology            = {risk_params.get('topology_template')}")
-            print(f"  vertical_rule       = {risk_params.get('vertical_rule')}")
-            print(f"  scene_role          = {scene_role}")
-            print(f"  attenuation         = {risk_params.get('receptacle_attenuation')}")
-            print(f"  weights             = {risk_params.get('weights')}")
+            print(f"  sigma_m             = {risk_params_for_field.get('sigma_m')}")
+            print(f"  weights(raw)        = {risk_params.get('weights')}")
+            print(f"  weights(parsed)     = { {k: ('inf' if np.isinf(v) else float(v)) for k, v in weights_parsed.items()} }")
             print(f"  occupancy_voxels       = {int(obj['occupancy_mask'].sum())}")
             #print(f"  source_voxels           = {int(obj['source_mask'].sum())}")
             print(f"  source_surface_voxels   = {int(obj['source_surface_mask'].sum())}")
             print(f"  source_footprint_voxels = {int(np.any(obj['source_surface_mask'], axis=2).sum())}")
-            print(f"  frac > 5            = {float((V_object > 5.0).mean()):.4f}")
-            print(f"  frac > 10           = {float((V_object > 10.0).mean()):.4f}")
+            print(f"  frac > 0.10         = {float((V_object > 0.10).mean()):.4f}")
+            print(f"  frac > 0.50         = {float((V_object > 0.50).mean()):.4f}")
 
-            if risk_params.get("vertical_rule", "standard_decay") == "gravity_column":
+            if np.isinf(w_plus_z):
                 z_vals = grid.Z[obj["source_surface_mask"]]
                 if z_vals.size > 0:
                     print(f"  top surface z range = {z_vals.min():.4f} .. {z_vals.max():.4f}")
 
-            if scene_role == "hazard_target":
-                hazard_fields.append(V_object)
-            else:
-                print(f"  -> not added to hazard superposition (scene_role={scene_role})")
-
-            selected_cap_direction = "none"
-            topology = risk_params.get("topology_template", "isotropic_sphere")
-            weights = risk_params.get("weights", {})
-
-            if topology == "upward_vertical_cone":
-                selected_cap_direction = "w_+z"
-            elif topology == "forward_directional_cone":
-                horiz_keys = ["w_+x", "w_-x", "w_+y", "w_-y"]
-                selected_cap_direction = max(horiz_keys, key=lambda k: float(weights.get(k, 0.0)))
-            elif topology == "planar_half_space":
-                all_keys = ["w_+x", "w_-x", "w_+y", "w_-y", "w_+z", "w_-z"]
-                selected_cap_direction = max(all_keys, key=lambda k: float(weights.get(k, 0.0)))
+            hazard_fields.append(V_object)
 
             print("\n--- AXIS OCCLUSION CAP DEBUG ---")
             print("active_cap_keys:", active_cap_keys)
@@ -2548,7 +2548,6 @@ def run_pipeline(
             per_object_debug.append(
                 {
                     "label": obj["label"],
-                    "scene_role": scene_role,
                     "world_pt": obj["world_pt"].tolist(),
                     "bbox_3d": list(obj["occupancy_bbox_3d"]),
                     "num_world_points": int(len(obj["world_points"])),
@@ -2559,17 +2558,26 @@ def run_pipeline(
             )
 
         if not hazard_fields:
-            print("No scene_role='hazard_target' objects were found. Final risk field will be zeros.")
+            print("No objects were found for hazard superposition. Final risk field will be zeros.")
             V_final = np.zeros(grid.shape, dtype=np.float32)
+            semantic_hard_mask = np.zeros(grid.shape, dtype=bool)
         else:
             V_final = compute_sum_superposition(
                 hazard_fields,
-                v_max=300.0,
+                v_max=8.0,
             )
-            
+            semantic_hard_mask = np.zeros(grid.shape, dtype=bool)
+
+        if time_risk_voxel_map and _risk_voxel_map_t0 is not None:
+            print(
+                "[TIMING] risk voxel map (global grid + voxelization + occupancy + field + "
+                f"superposition; excludes detector + save + overlay): "
+                f"{time.perf_counter() - _risk_voxel_map_t0:.4f}s"
+            )
+
         scene_max_risk_score = float(V_final.max())
         print(f"Scene max risk value: {scene_max_risk_score:.4f}")
-        print(f"Scene max risk score: {scene_max_risk_score / 100.0:.4f}")
+        print(f"Scene max risk value (0..1 vis): {float(np.clip(scene_max_risk_score, 0.0, 1.0)):.4f}")
 
         # ------------------------------------------------------------------
         # 6) Save Loop 1 outputs
@@ -2595,6 +2603,7 @@ def run_pipeline(
         np.savez_compressed(
             "loop1_risk_field.npz",
             risk_field=V_final.astype(np.float32),
+            semantic_hard_mask=semantic_hard_mask.astype(np.uint8),
             x=grid.x.astype(np.float32),
             y=grid.y.astype(np.float32),
             z=grid.z.astype(np.float32),

@@ -145,7 +145,12 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--merge_box_iou_thresh", type=float, default=0.85)
     p.add_argument("--merge_mask_iou_thresh", type=float, default=0.80)
     p.add_argument("--merge_containment_thresh", type=float, default=0.90)
-
+    p.add_argument(
+        "--merge_containment_min_area_ratio",
+        type=float,
+        default=0.30,
+        help="Min area ratio for containment-based post-merge (see MobileSAMV2WrapperV2).",
+    )
     p.add_argument("--enable_geometry_cleanup", action="store_true")
     p.add_argument("--enable_container_suppression", action="store_true")
     p.add_argument("--postprocess_debug", action="store_true")
@@ -203,6 +208,7 @@ def main() -> None:
         merge_box_iou_thresh=args.merge_box_iou_thresh,
         merge_mask_iou_thresh=args.merge_mask_iou_thresh,
         merge_containment_thresh=args.merge_containment_thresh,
+        merge_containment_min_area_ratio=args.merge_containment_min_area_ratio,
         enable_geometry_cleanup=bool(args.enable_geometry_cleanup),
         enable_container_suppression=bool(args.enable_container_suppression),
         postprocess_debug=bool(args.postprocess_debug),

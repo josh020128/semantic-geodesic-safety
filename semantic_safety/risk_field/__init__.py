@@ -1,12 +1,18 @@
-"""Risk field: directional interpolation W_hazard(x), shielding A(x), final V_risk(x)."""
+from .superposition import (
+    shielding_ratio,
+    compute_sum_superposition,
+    compute_logsumexp_superposition,
+)
 
-from .interpolation import compute_directional_weights, compute_hazard_field
-from .superposition import compute_logsumexp_superposition, risk_cost_field, shielding_ratio
+from .templates import (
+    build_risk_field_from_params,
+    has_any_active_semantic_direction,
+)
 
 __all__ = [
-    "compute_directional_weights",
-    "compute_hazard_field",
-    "compute_logsumexp_superposition",
     "shielding_ratio",
-    "risk_cost_field",
+    "compute_sum_superposition",
+    "compute_logsumexp_superposition",
+    "build_risk_field_from_params",
+    "has_any_active_semantic_direction",
 ]

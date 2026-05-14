@@ -1,5 +1,5 @@
 """
-Occlusion shielding, per-hazard cost composition, and multi-hazard LogSumExp superposition.
+Occlusion shielding, soft-field superposition, and hard semantic mask union.
 """
 
 from __future__ import annotations
@@ -11,6 +11,12 @@ from scipy.special import logsumexp
 
 
 def shielding_ratio(d_geo: np.ndarray, d_euc: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    """
+    A(x) = clip((d_euc + eps) / (d_geo + eps), 0, 1)
+
+    - near 1 when Euclidean and geodesic distances are similar
+    - near 0 when geodesic distance is much larger (strong occlusion / shielding)
+    """
     num = d_euc + eps
     den = d_geo + eps
 
@@ -26,79 +32,54 @@ def shielding_ratio(d_geo: np.ndarray, d_euc: np.ndarray, eps: float = 1e-6) -> 
     return ratio
 
 
-def risk_cost_field(
-    W_hazard: np.ndarray,
-    A: np.ndarray,
-    d_geo: np.ndarray,
-    alpha: float = 1.0,
-    base_risk: float = 1.0,
+def compute_sum_superposition(
+    hazard_fields: List[np.ndarray],
+    v_max: float = 8.0,
 ) -> np.ndarray:
     """
-    V_risk(x) = base_risk * W_hazard(x) * A(x) * exp(-α * d_geo).
-    Scalar cost field: 0 = safe, higher = more penalty.
+    Simple additive superposition for soft semantic fields.
+
+    New scale assumption:
+    - each per-object soft field is typically in [0, 1]
+    - sum across multiple objects can exceed 1
     """
-    return base_risk * W_hazard * A * np.exp(-alpha * np.clip(d_geo, 0, None))
+    if not hazard_fields:
+        raise ValueError("Cannot superpose an empty list of hazard fields.")
+
+    stacked = np.stack(hazard_fields, axis=0).astype(np.float64)
+    v_final = np.sum(stacked, axis=0)
+    return np.clip(v_final, 0.0, v_max)
 
 
 def compute_logsumexp_superposition(
     hazard_fields: List[np.ndarray],
-    beta: float = 10.0,
-    v_max: float = 10.0,
+    beta: float = 8.0,
+    v_max: float = 8.0,
 ) -> np.ndarray:
     """
-    Combines multiple individual risk fields into a single bounded cost map.
-    Uses the LogSumExp smooth-maximum formulation to preserve compound risk
-    without creating impassable infinite-cost walls.
-
-    hazard_fields: List of 3D numpy arrays, each representing V_i(x) for one object.
-    beta: Sharpness parameter.
-          Higher beta approaches the pure Max() operator.
-          Lower beta blends the fields more (closer to Summation).
-    v_max: Absolute ceiling for the risk cost to prevent trajectory optimizer failure.
+    Optional smooth-max style superposition for soft semantic fields.
     """
     if not hazard_fields:
         raise ValueError("Cannot superpose an empty list of hazard fields.")
 
-    stacked_fields = np.stack(hazard_fields, axis=0)
-
+    stacked_fields = np.stack(hazard_fields, axis=0).astype(np.float64)
     scaled_fields = beta * stacked_fields
-
     lse_result = logsumexp(scaled_fields, axis=0)
-
     v_final = (1.0 / beta) * lse_result
+    return np.clip(v_final, a_min=0.0, a_max=v_max)
 
-    v_final_capped = np.clip(v_final, a_min=0.0, a_max=v_max)
 
-    return v_final_capped
-
-def compute_hybrid_superposition(
-    hazard_fields: list[np.ndarray],
-    beta: float = 6.0,
-    v_max: float = 120.0,
-    additive_scale: float = 0.15,
+def compute_hard_mask_union(
+    hard_masks: List[np.ndarray],
 ) -> np.ndarray:
-    if not hazard_fields:
-        raise ValueError("Cannot superpose an empty list of hazard fields.")
+    """
+    Union of per-object hard semantic exclusion masks.
 
-    stacked = np.stack(hazard_fields, axis=0)
+    Returns:
+      bool array, True = semantically forbidden
+    """
+    if not hard_masks:
+        raise ValueError("Cannot union an empty list of hard semantic masks.")
 
-    # smooth-max core
-    lse = (1.0 / beta) * logsumexp(beta * stacked, axis=0)
-
-    # small overlap bonus above the max
-    max_field = np.max(stacked, axis=0)
-    overlap_bonus = additive_scale * np.clip(np.sum(stacked, axis=0) - max_field, 0.0, None)
-
-    v_final = lse + overlap_bonus
-    return np.clip(v_final, 0.0, v_max)
-
-def compute_sum_superposition(
-    hazard_fields: list[np.ndarray],
-    v_max: float = 300.0,
-) -> np.ndarray:
-    if not hazard_fields:
-        raise ValueError("Cannot superpose an empty list of hazard fields.")
-
-    stacked = np.stack(hazard_fields, axis=0)
-    v_final = np.sum(stacked, axis=0)
-    return np.clip(v_final, 0.0, v_max)
+    stacked = np.stack(hard_masks, axis=0).astype(bool)
+    return np.any(stacked, axis=0)

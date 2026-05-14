@@ -237,6 +237,16 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--gt-blocker-geoms", nargs="*", default=[])
     p.add_argument("--use-table-top-filter", action="store_true")
     p.add_argument("--prior-json-path", type=str, default=None)
+    p.add_argument(
+        "--time-risk-voxel-map",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Print wall time for global grid + voxelization + occupancy + per-object risk fields + "
+            "superposition (excludes MobileSAM/SigLIP model load and scene detection; excludes npz/json save "
+            "and image overlays)."
+        ),
+    )
 
     # ----------------------------------------------------------
     # SigLIP2 frontend args
@@ -321,6 +331,7 @@ def main() -> None:
         gt_blocker_geoms=args.gt_blocker_geoms,
         use_table_top_filter=bool(args.use_table_top_filter),
         prior_json_path=prior_json_path,
+        time_risk_voxel_map=bool(args.time_risk_voxel_map),
     )
 
 

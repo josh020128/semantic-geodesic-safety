@@ -28,3 +28,15 @@ siglip2_labeler_v2_debug/
 
 # Local pretrained model files
 semantic_safety/perception_2d3d/pretrained_models/
+
+# MuJoCo logs
+MJMODEL.TXT
+MUJOCO_LOG.TXT
+
+# Generated trajectory outputs
+*.npy
+
+# Scratch/debug patch files
+risk_loop_old_snippet.txt
+scripts/_new_risk_loop_body.txt
+scripts/_patch_test_full_pipeline.py

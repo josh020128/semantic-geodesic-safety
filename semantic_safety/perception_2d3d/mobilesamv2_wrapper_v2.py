@@ -176,6 +176,7 @@ class MobileSAMV2WrapperV2:
         merge_box_iou_thresh: float = 0.85,
         merge_mask_iou_thresh: float = 0.80,
         merge_containment_thresh: float = 0.90,
+        merge_containment_min_area_ratio: float = 0.30,
         enable_geometry_cleanup: bool = True,
         cleanup_duplicate_box_iou_thresh: float = 0.75,
         cleanup_duplicate_mask_iou_thresh: float = 0.60,
@@ -216,6 +217,7 @@ class MobileSAMV2WrapperV2:
         self.merge_box_iou_thresh = float(merge_box_iou_thresh)
         self.merge_mask_iou_thresh = float(merge_mask_iou_thresh)
         self.merge_containment_thresh = float(merge_containment_thresh)
+        self.merge_containment_min_area_ratio = float(merge_containment_min_area_ratio)
 
         self.enable_geometry_cleanup = bool(enable_geometry_cleanup)
         self.cleanup_duplicate_box_iou_thresh = float(cleanup_duplicate_box_iou_thresh)
@@ -785,6 +787,11 @@ class MobileSAMV2WrapperV2:
         """
         Conservative optional post-merge:
         only merge near-duplicate instances, not merely adjacent parts.
+
+        Important: merging on mask containment alone is unsafe when one proposal is
+        a large "umbrella" mask and others are tight object masks. True duplicates
+        have similar mask areas, so containment-triggered merges also require
+        ``merge_containment_min_area_ratio``.
         """
         if masks.shape[0] <= 1:
             return masks, boxes, scores
@@ -821,11 +828,19 @@ class MobileSAMV2WrapperV2:
                 contain_ji = self._containment_ratio(masks[j], masks[i])
                 max_contain = max(contain_ij, contain_ji)
 
-                should_merge = (
-                    (box_iou >= self.merge_box_iou_thresh)
-                    or (mask_iou >= self.merge_mask_iou_thresh)
-                    or (max_contain >= self.merge_containment_thresh)
+                area_i = self._mask_area(masks[i])
+                area_j = self._mask_area(masks[j])
+                max_area = max(area_i, area_j)
+                min_area = min(area_i, area_j)
+                area_ratio_sim = (min_area / max_area) if max_area > 0.0 else 0.0
+
+                merge_by_box = box_iou >= self.merge_box_iou_thresh
+                merge_by_mask = mask_iou >= self.merge_mask_iou_thresh
+                merge_by_contain = (max_contain >= self.merge_containment_thresh) and (
+                    area_ratio_sim >= self.merge_containment_min_area_ratio
                 )
+
+                should_merge = merge_by_box or merge_by_mask or merge_by_contain
 
                 if should_merge:
                     used[j] = True

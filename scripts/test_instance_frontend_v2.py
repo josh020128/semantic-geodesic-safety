@@ -101,6 +101,12 @@ def main() -> None:
     ap.add_argument("--merge_box_iou_thresh", type=float, default=0.85, help="Box IoU threshold for optional post-merge")
     ap.add_argument("--merge_mask_iou_thresh", type=float, default=0.80, help="Mask IoU threshold for optional post-merge")
     ap.add_argument("--merge_containment_thresh", type=float, default=0.90, help="Containment threshold for optional post-merge")
+    ap.add_argument(
+        "--merge_containment_min_area_ratio",
+        type=float,
+        default=0.30,
+        help="Min min/max mask-area ratio when merging on containment (see MobileSAMV2WrapperV2).",
+    )
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -122,6 +128,7 @@ def main() -> None:
         merge_box_iou_thresh=args.merge_box_iou_thresh,
         merge_mask_iou_thresh=args.merge_mask_iou_thresh,
         merge_containment_thresh=args.merge_containment_thresh,
+        merge_containment_min_area_ratio=args.merge_containment_min_area_ratio,
     )
 
     results = wrapper.process_image(rgb, verbose=True)

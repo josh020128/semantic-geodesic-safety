@@ -3,10 +3,12 @@
 SYSTEM_INSTRUCTION = """
 Evaluate each ordered pair: (manipulated object, scene object).
 
-You are generating a semantic risk-prior dataset for robotic manipulation safety.
+You are generating a semantic consequence-prior dataset for robotic manipulation.
 
-Task:
-For every ordered pair (manipulated object, scene object), output exactly one JSON object describing how risky it is to move the manipulated object near the scene object.
+Important scope:
+- This dataset is NOT for collision checking or contact safety.
+- Collision and physical contact constraints are handled separately by the occupancy volume.
+- Your task is only to describe the semantic consequence field induced by moving the manipulated object near the scene object.
 
 Interpretation:
 - manipulated object = the object the robot is holding or moving
@@ -15,10 +17,11 @@ Interpretation:
 
 Return:
 - one JSON array
-- one object per ordered pair
+- exactly one object per ordered pair
 - valid JSON only
 - no markdown
 - no explanations
+- no comments
 - no extra fields
 
 Use exactly this schema for every entry:
@@ -26,161 +29,110 @@ Use exactly this schema for every entry:
 {
   "manipulated": "string",
   "scene": "string",
-  "families": ["string", ...],
-  "scene_role": "hazard_target | safe_receptacle | support_context | neutral_context",
-  "topology_template": "upward_vertical_cone | isotropic_sphere | forward_directional_cone | planar_half_space",
   "weights": {
-    "w_+x": float,
-    "w_-x": float,
-    "w_+y": float,
-    "w_-y": float,
-    "w_+z": float,
-    "w_-z": float
+    "w_+x": number or "inf",
+    "w_-x": number or "inf",
+    "w_+y": number or "inf",
+    "w_-y": number or "inf",
+    "w_+z": number or "inf",
+    "w_-z": number or "inf"
   },
   "radius_m": float,
-  "vertical_rule": "standard_decay | gravity_column",
-  "lateral_decay": "low | moderate | high",
-  "receptacle_attenuation": float
+  "attenuation": float
 }
 
-Field meanings:
+Formal meaning of the fields:
 
-1) families
-Choose zero or more relevant hazard families from:
-["liquid", "electrical", "thermal", "sharp", "fragile", "impact", "contamination"]
-
-2) scene_role
-Choose exactly one:
-- "hazard_target": the scene object is vulnerable and may be harmed
-- "safe_receptacle": the scene object safely receives or contains the hazard
-- "support_context": the scene object is mainly structural context
-- "neutral_context": little or no meaningful hazard relation
-
-Hard rule for support_context (must follow):
-- If scene_role is "support_context" (e.g., table, shelf, floor, wall, counter, desk), then:
-  - families must be []
-  - topology_template must be "isotropic_sphere"
-  - ALL weights must be 0.0 (w_+x, w_-x, w_+y, w_-y, w_+z, w_-z)
-  - radius_m must be 0.0
-  - vertical_rule must be "standard_decay"
-  - lateral_decay must be "moderate"
-  - receptacle_attenuation must be 0.1
-
-3) topology_template
-Choose the spatial risk shape:
-- "upward_vertical_cone": strongest risk above the scene object; good for spill/drip/drop hazards
-- "isotropic_sphere": risk spreads in all directions; good for general proximity/collision hazards
-- "forward_directional_cone": risk mainly extends in one horizontal direction
-- "planar_half_space": risk is concentrated on one side of the scene object
-
-4) weights
-Each weight must be in [0.0, 1.0].
+1) weights
 The frame is centered on the scene object.
-Important convention:
-- w_+z always means risk above the scene object
-- DO NOT automatically make w_+z high just because the manipulated object is a liquid.
-- Make w_+z high only when "from above" creates meaningful consequence to the scene object (i.e., the scene is vulnerable to spill/drip/drop from above).
-- If the scene object is water-tolerant, washable, or not meaningfully harmed by getting wet (e.g., bowl, mug, sink, most metal tools like a kitchen knife),
-  then liquid-from-above should usually be LOW risk (often "safe_receptacle" or "neutral_context"), with low w_+z and usually "standard_decay".
-- w_-z is often 0.0 when “below the scene object” is not dangerous
+The six directional weights describe semantic consequence by direction:
+- w_+x = consequence in the +x direction from the scene object
+- w_-x = consequence in the -x direction from the scene object
+- w_+y = consequence in the +y direction from the scene object
+- w_-y = consequence in the -y direction from the scene object
+- w_+z = consequence above the scene object
+- w_-z = consequence below the scene object
+
+Allowed value for each weight:
+- 0.0
+- any real number in [0.0, 1.0]
+- "inf"
 
 Interpretation:
-- 1.0 = maximum risk
-- 0.7 to 0.9 = strong risk
-- 0.4 to 0.6 = moderate risk
-- 0.1 to 0.3 = weak risk
-- 0.0 = no meaningful risk
+- 0.0 = no meaningful semantic consequence in that direction
+- values in (0.0, 1.0] = finite soft semantic consequence
+- "inf" = hard semantic no-go from that direction
 
-5) radius_m
-Use a realistic local manipulation radius in meters.
-radius_m is a RADIUS (not diameter). It should be small and local.
-Avoid unrealistic large radii:
-- In most everyday tabletop scenes, radius_m should usually be in [0.03, 0.20]
-- Use >0.20 only for truly large/extended hazards (e.g., large fragile area, large swinging tool), and still keep it conservative
-- For small hand-sized scene objects (e.g., bleach cleanser bottle), radius_m is often 0.05–0.12
-When in doubt, choose a smaller radius.
+Use "inf" sparingly.
+Use "inf" only when approaching from that direction should be treated as categorically forbidden in semantic terms, not merely high risk.
+Examples:
+- spilling liquid onto vulnerable electronics from above
+- dropping or passing a dangerous object through a direction where consequence would be unacceptable
 
-Calibration example:
-- (soccer ball, bleach cleanser): impact hazard only → radius_m around 0.08–0.12 is typically sufficient (e.g., 0.10)
+Do NOT use "inf" for ordinary collision avoidance or generic proximity discomfort.
+Those belong to occupancy/collision reasoning, not this dataset.
 
-6) vertical_rule
-- "standard_decay": normal distance decay
-- "gravity_column": persistent danger in the vertical-above direction.
-  Use this only when (a) danger mainly comes from above AND (b) the scene object is meaningfully vulnerable to that above-direction hazard
-  (e.g., liquids above electronics, liquids above hot electrical tools, dropping heavy objects onto fragile items).
-  If the scene object is NOT vulnerable to being wetted (e.g., bowl, sink, mug) then prefer "standard_decay" and low w_+z.
+2) radius_m
+radius_m is the spatial decay length scale of the semantic consequence field.
+It controls how far the consequence meaningfully extends away from the scene object.
 
-7) lateral_decay
-- "low": spreads broadly sideways
-- "moderate": standard sideways spread
-- "high": falls off quickly sideways
+Interpretation:
+- larger radius_m = longer spatial influence
+- smaller radius_m = more local influence
 
-8) receptacle_attenuation
-Use a value in [0.0, 1.0].
-Interpretation: how vulnerable the scene object is / how much the interaction matters.
-- 1.0 = highly vulnerable / meaningful consequence (keep high only when truly harmful)
-- 0.7–0.9 = fairly vulnerable / meaningful
-- 0.4–0.6 = mild vulnerability / low-to-moderate consequence (use this when the relation exists but isn't severe)
-- 0.1–0.3 = safe receptacle or very safe / negligible consequence
+Rules:
+- radius_m must be >= 0.0
+- if all six weights are 0.0, set radius_m = 0.0
+- otherwise radius_m must be > 0.0
+- choose a conservative but physically plausible value
+- avoid arbitrarily large radii
 
-Guidance:
-- Do NOT leave this at 1.0 by default. It should vary with the pair.
-- For "safe_receptacle", receptacle_attenuation should usually be 0.1–0.3.
-- For "support_context", receptacle_attenuation must be 0.1 (see hard rule above).
-- For "neutral_context", receptacle_attenuation is typically 0.3–0.6 unless truly no relation (then weights/radius are 0 anyway).
+Typical tabletop range:
+- often between 0.05 and 0.30 meters
+- use values outside this range only when truly justified by the pair
 
-Decision rules:
+3) attenuation
+attenuation is a scalar in [0.0, 1.0].
+It scales the overall consequence magnitude.
+
+Interpretation:
+- 1.0 = no attenuation / Most common case that has at least some semantic hazard consequence
+- smaller values = reduced consequence because the scene object tends to absorb, contain, or mitigate the consequence
+- 0.0 = effectively negligible semantic consequence
+
+Rules:
+- attenuation must be in [0.0, 1.0]
+- if all six weights are 0.0, attenuation should usually be 0.0
+- do not use attenuation to represent collision safety
+- attenuation only represents semantic consequence reduction, not whether contact is mechanically safe
+
+General decision rules:
 - Base the answer on common-sense physical interaction.
 - Be conservative but physically plausible.
-- If the manipulated object can directly damage the scene object, use "hazard_target".
-- If the scene object safely catches or contains the manipulated object or its contents, use "safe_receptacle".
-- If the scene object is mainly a table, desk, wall, floor, counter, or shelf, often use "support_context".
-- If there is little meaningful interaction, use "neutral_context".
+- Use the minimum number of assumptions needed.
+- Do not invent hidden categories, roles, or templates.
+- Do not output any field other than manipulated, scene, weights, radius_m, attenuation.
 
-Vulnerability sanity checks (important):
-- Liquids: Only treat liquid-from-above as high risk when the scene object is actually vulnerable (electronics, paper/books, open food, sensitive machinery, etc.).
-  Do NOT treat "getting wet" as inherently harmful for water-tolerant objects (bowl, mug, sink, plastic tray) or most metal tools (kitchen knife).
-- Sharp/thermal/electrical: Only assign high weights when there is a plausible damage mode (cutting, burning, shock, corrosion/shorting, contamination).
+How to think about weights:
+- If the consequence is roughly symmetric in all directions, use similar values for all six weights.
+- If the consequence is strongly directional, assign higher values only to the relevant directions.
+- If the consequence is mainly "from above", make w_+z larger than the others.
+- If a direction is not meaningful, set its weight to 0.0.
+- Do not automatically make w_+z high just because the manipulated object is a liquid.
+  Make w_+z high only when the scene object is actually vulnerable to consequence from above.
 
-Concrete examples to calibrate:
-- (cup of water, laptop): hazard_target; families include ["liquid","electrical"]; upward_vertical_cone; w_+z high; vertical_rule gravity_column.
-- (cup of water, bowl): safe_receptacle; families may be ["liquid"] or []; low weights (including low w_+z); vertical_rule standard_decay; receptacle_attenuation low (e.g., 0.1–0.3).
-- (cup of water, kitchen knife): usually neutral_context (or very weak hazard_target at most); low weights; vertical_rule standard_decay (wet knife is not a meaningful hazard to the knife).
+Important exclusions:
+- Do NOT encode collision-only danger here.
+- Do NOT treat generic tables, walls, floors, shelves, desks, or counters as risky unless there is a meaningful pair-specific semantic consequence.
+- If the scene object is mainly structural context and there is no meaningful semantic consequence for the pair, set all six weights to 0.0, radius_m to 0.0, and attenuation to 0.0.
 
-Default no-relation rule:
-If there is essentially no meaningful hazard relation, output:
-- "families": []
-- "scene_role": "neutral_context"
-- "topology_template": "isotropic_sphere"
-- all weights = 0.0
-- "radius_m": 0.0
-- "vertical_rule": "standard_decay"
-- "lateral_decay": "moderate"
-- "receptacle_attenuation": 1.0
-
-Example:
-[  
-    {
-    "manipulated": "cup of water",
-    "scene": "power drill",
-    "families": ["liquid", "electrical"],
-    "scene_role": "hazard_target",
-    "topology_template": "upward_vertical_cone",
-    "weights": {
-        "w_+x": 0.3,
-        "w_-x": 0.3,
-        "w_+y": 0.3,
-        "w_-y": 0.3,
-        "w_+z": 1.0,
-        "w_-z": 0.0
-    },
-    "radius_m": 0.17,
-    "vertical_rule": "gravity_column",
-    "lateral_decay": "moderate",
-    "receptacle_attenuation": 1.0
-    }
-    ...
-]
+Output format reminder:
+- return one JSON array
+- one object per ordered pair
+- valid JSON only
+- no markdown
+- no prose
+- no extra keys
 """
 
 RISK_PRIOR_PROMPT = """You are an expert physical reasoning engine for robotics semantic risk.
