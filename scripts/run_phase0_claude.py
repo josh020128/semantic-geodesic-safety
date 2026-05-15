@@ -15,7 +15,7 @@ OUTPUT_PATH = DATA_DIR / "semantic_risk_demo_claude.json"
 
 # 1. Define the datasets (kept identical to run_phase0.py)
 group_a = ["cup of water", "kitchen knife", "hot soldering iron"]
-group_b = ["laptop", "mug", "bowl", "soccer ball", "power drill", "bleach cleanser"]
+group_b = ["laptop", "mug", "bowl", "soccer ball", "power drill", "bleach cleanser", "apple", "banana", "box", "can"]
 group_c = ["table", "shelf"]
 
 M = group_a + group_b
@@ -120,6 +120,7 @@ Typical tabletop range:
 Decision rules:
 - Base the answer on common-sense physical interaction.
 - Be conservative but physically plausible.
+- Use non zero weights only when the semantic consequence is meaningful, which means the object in the scene is actually damaged or harmed when the manipulated object is getting near or touching it.
 - Use the minimum number of assumptions needed.
 - Do not invent hidden categories, roles, or templates.
 - Output only manipulated, scene, weights, and sigma_m.

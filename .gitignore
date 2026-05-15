@@ -40,3 +40,5 @@ MUJOCO_LOG.TXT
 risk_loop_old_snippet.txt
 scripts/_new_risk_loop_body.txt
 scripts/_patch_test_full_pipeline.py
+external/
+perception_debug/

@@ -30,6 +30,29 @@ from semantic_safety.perception_2d3d.instance_semantic_siglip2_frontend_v2 impor
 from semantic_safety.perception_2d3d.mobilesamv2_wrapper_v2 import MobileSAMV2WrapperV2
 
 
+# Default detector vocabulary when --candidate-labels auto (tabletop mesh objects).
+DEFAULT_ASSET_CANDIDATE_LABELS: list[str] = [
+    "apple",
+    "banana",
+    "bleach cleanser",
+    "bowl",
+    "box",
+    "can",
+    "mug",
+    "power drill",
+    "soccer ball",
+]
+
+
+def resolve_candidate_labels(user_candidate_labels: list[str] | None) -> list[str] | None:
+    """If ``user_candidate_labels`` is ``['auto']``, return ``DEFAULT_ASSET_CANDIDATE_LABELS``."""
+    if user_candidate_labels is None:
+        return None
+    if len(user_candidate_labels) == 1 and user_candidate_labels[0].strip().lower() == "auto":
+        return list(DEFAULT_ASSET_CANDIDATE_LABELS)
+    return user_candidate_labels
+
+
 def _load_base_pipeline_module():
     """
     Load the original scripts/test_full_pipeline.py exactly as-is.
@@ -152,7 +175,11 @@ class _InjectedSemanticPerception:
 
 
 def build_siglip2_frontend(args) -> InstanceSemanticSigLIP2FrontendV2:
-    custom_labels = list(args.custom_label)
+    custom_labels = (
+        list(args.custom_label)
+        if args.custom_label is not None
+        else list(DEFAULT_ASSET_CANDIDATE_LABELS)
+    )
     if args.custom_labels_txt:
         custom_labels.extend(load_custom_labels_from_txt(args.custom_labels_txt))
 
@@ -232,7 +259,18 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--camera", type=str, default="Mujoco")
     p.add_argument("--xml-path", type=str, default="tabletop.xml")
     p.add_argument("--scene-label", type=str, default="auto")
-    p.add_argument("--candidate-labels", nargs="*", default=None)
+    p.add_argument(
+        "--candidate-labels",
+        nargs="*",
+        default=None,
+        metavar="LABEL",
+        help=(
+            "Extra detector label strings merged into pass1 candidates. "
+            "Use a single value 'auto' to use the default tabletop object label list "
+            f"({len(DEFAULT_ASSET_CANDIDATE_LABELS)} labels). "
+            "Omit to rely on prior JSON (+ scene-label) only."
+        ),
+    )
     p.add_argument("--use-gt-blockers", action="store_true")
     p.add_argument("--gt-blocker-geoms", nargs="*", default=[])
     p.add_argument("--use-table-top-filter", action="store_true")
@@ -247,6 +285,16 @@ def build_argparser() -> argparse.ArgumentParser:
             "and image overlays)."
         ),
     )
+    p.add_argument(
+        "--voxel-resolution",
+        type=float,
+        default=None,
+        metavar="M",
+        help=(
+            "Workspace grid voxel size in meters (default: 0.01 = 1 cm, from base pipeline). "
+            "Use 0.004 for the legacy 4 mm grid."
+        ),
+    )
 
     # ----------------------------------------------------------
     # SigLIP2 frontend args
@@ -257,9 +305,28 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--include-synonyms", action="store_true")
     p.add_argument("--custom-labels-txt", default=None)
     p.add_argument("--custom-aliases-json", default=None)
-    p.add_argument("--custom-label", action="append", default=["power drill", "table", "shelf", "bowl", "mug", "hot soldering iron"])
+    p.add_argument(
+        "--custom-label",
+        action="append",
+        default=None,
+        metavar="LABEL",
+        help=(
+            "Extra labels registered in the LVIS/custom bank (repeatable). "
+            f"Default: DEFAULT_ASSET_CANDIDATE_LABELS ({len(DEFAULT_ASSET_CANDIDATE_LABELS)} tabletop objects). "
+            "Pass e.g. --custom-label 'hot soldering iron' to add non-asset classes."
+        ),
+    )
 
-    p.add_argument("--candidate-subset-enabled", action="store_true")
+    p.add_argument(
+        "--candidate-subset-enabled",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "When on, SigLIP2 scores only against canonical labels derived from "
+            "detect_scene_objects candidate_labels (not the full LVIS bank). "
+            "Use --no-candidate-subset-enabled for the legacy full-bank behavior."
+        ),
+    )
     p.add_argument("--top-k", type=int, default=5)
     p.add_argument("--crop-pad-frac", type=float, default=0.08)
     p.add_argument("--min-mask-area-px", type=int, default=64)
@@ -321,18 +388,27 @@ def main() -> None:
     print(f"Frontend       : {frontend.__class__.__name__}")
     print("Risk backend   : unchanged (delegated to original test_full_pipeline.py)")
 
-    base.run_pipeline(
-        manipulated_obj=args.manipulated,
-        camera_type=args.camera,
-        target_label=args.scene_label,
-        candidate_labels=args.candidate_labels,
-        xml_path=args.xml_path,
-        use_gt_blockers=bool(args.use_gt_blockers),
-        gt_blocker_geoms=args.gt_blocker_geoms,
-        use_table_top_filter=bool(args.use_table_top_filter),
-        prior_json_path=prior_json_path,
-        time_risk_voxel_map=bool(args.time_risk_voxel_map),
-    )
+    candidate_labels = resolve_candidate_labels(args.candidate_labels)
+    if args.candidate_labels and len(args.candidate_labels) == 1 and args.candidate_labels[0].lower() == "auto":
+        print(f"Candidate labels: auto -> DEFAULT_ASSET_CANDIDATE_LABELS ({len(candidate_labels)} labels)")
+        print(" ", candidate_labels)
+
+    run_kwargs: dict[str, Any] = {
+        "manipulated_obj": args.manipulated,
+        "camera_type": args.camera,
+        "target_label": args.scene_label,
+        "candidate_labels": candidate_labels,
+        "xml_path": args.xml_path,
+        "use_gt_blockers": bool(args.use_gt_blockers),
+        "gt_blocker_geoms": args.gt_blocker_geoms,
+        "use_table_top_filter": bool(args.use_table_top_filter),
+        "prior_json_path": prior_json_path,
+        "time_risk_voxel_map": bool(args.time_risk_voxel_map),
+    }
+    if args.voxel_resolution is not None:
+        run_kwargs["voxel_resolution_m"] = float(args.voxel_resolution)
+
+    base.run_pipeline(**run_kwargs)
 
 
 if __name__ == "__main__":

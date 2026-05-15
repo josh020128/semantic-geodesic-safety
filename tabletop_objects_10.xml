@@ -1,0 +1,80 @@
+<mujoco model="semantic_safety_tabletop_objects_10">
+    <!--
+    1m x 1m tabletop; ten bodies using all nine allowed asset types once plus a
+    second banana (not all identical).
+    -->
+    <compiler angle="degree" coordinate="local" texturedir="."/>
+
+    <option gravity="0 0 -9.81"/>
+
+    <asset>
+        <mesh name="mesh_power_drill" file="data/assets/power_drill/textured.obj" scale="1 1 1"/>
+        <texture name="tex_power_drill" type="2d" file="data/assets/power_drill/texture_map.png"/>
+        <material name="mat_power_drill" texture="tex_power_drill"/>
+
+        <mesh name="mesh_bowl" file="data/assets/bowl/textured.obj" scale="1 1 1"/>
+        <texture name="tex_bowl" type="2d" file="data/assets/bowl/texture_map.png"/>
+        <material name="mat_bowl" texture="tex_bowl"/>
+
+        <mesh name="mesh_apple" file="data/assets/apple/textured.obj" scale="1 1 1"/>
+        <material name="mat_apple" rgba="0.82 0.14 0.12 1"/>
+
+        <mesh name="mesh_banana" file="data/assets/banana/textured.obj" scale="1 1 1"/>
+        <material name="mat_banana" rgba="0.95 0.82 0.18 1"/>
+
+        <mesh name="mesh_can" file="data/assets/can/textured.obj" scale="1 1 1"/>
+        <material name="mat_can" rgba="0.75 0.78 0.82 1"/>
+
+        <mesh name="mesh_mug" file="data/assets/mug/textured.obj" scale="1 1 1"/>
+        <material name="mat_mug" rgba="0.25 0.45 0.72 1"/>
+
+        <mesh name="mesh_bleach_cleanser" file="data/assets/bleach_cleanser/textured.obj" scale="1 1 1"/>
+        <material name="mat_bleach_cleanser" rgba="0.12 0.55 0.28 1"/>
+
+        <mesh name="mesh_soccer_ball" file="data/assets/soccer_ball/textured.obj" scale="1 1 1"/>
+        <material name="mat_soccer_ball" rgba="0.95 0.95 0.95 1"/>
+
+        <mesh name="mesh_box" file="data/assets/box/textured.obj" scale="1 1 1"/>
+        <material name="mat_box" rgba="0.72 0.58 0.42 1"/>
+    </asset>
+
+    <worldbody>
+        <light pos="0 0 1.5" dir="0 0 -1" directional="true" castshadow="false"/>
+
+        <geom name="table" type="box" size="0.5 0.5 0.05" pos="0 0 0" rgba="0.6 0.4 0.2 1"/>
+
+        <camera name="main_cam" pos="0 -0.8 0.5" fovy="45" xyaxes="1 0 0 0 0.5 0.8"/>
+
+        <body name="obj_power_drill_01" pos="-0.36 -0.10 0.10" euler="0 0 11">
+            <geom name="geom_power_drill_01" type="mesh" mesh="mesh_power_drill" material="mat_power_drill"/>
+        </body>
+        <body name="obj_bowl_01" pos="0.34 -0.14 0.10" euler="0 0 -8">
+            <geom name="geom_bowl_01" type="mesh" mesh="mesh_bowl" material="mat_bowl"/>
+        </body>
+        <body name="obj_apple_01" pos="-0.28 0.32 0.10" euler="0 0 22">
+            <geom name="geom_apple_01" type="mesh" mesh="mesh_apple" material="mat_apple"/>
+        </body>
+        <body name="obj_banana_01" pos="0.14 -0.36 0.10" euler="0 0 42">
+            <geom name="geom_banana_01" type="mesh" mesh="mesh_banana" material="mat_banana"/>
+        </body>
+        <body name="obj_can_01" pos="-0.14 0.36 0.10" euler="0 0 -20">
+            <geom name="geom_can_01" type="mesh" mesh="mesh_can" material="mat_can"/>
+        </body>
+        <body name="obj_mug_01" pos="0.30 0.26 0.10" euler="0 0 16">
+            <geom name="geom_mug_01" type="mesh" mesh="mesh_mug" material="mat_mug"/>
+        </body>
+        <body name="obj_bleach_cleanser_01" pos="-0.32 0.12 0.10" euler="0 0 -6">
+            <geom name="geom_bleach_cleanser_01" type="mesh" mesh="mesh_bleach_cleanser" material="mat_bleach_cleanser"/>
+        </body>
+        <body name="obj_soccer_ball_01" pos="0.08 0.10 0.10" euler="0 12 -9">
+            <geom name="geom_soccer_ball_01" type="mesh" mesh="mesh_soccer_ball" material="mat_soccer_ball"/>
+        </body>
+        <body name="obj_box_01" pos="-0.06 -0.08 0.10" euler="0 0 7">
+            <geom name="geom_box_01" type="mesh" mesh="mesh_box" material="mat_box"/>
+        </body>
+        <!-- Second instance: same mesh type, different pose/position (allowed mix). -->
+        <body name="obj_banana_02" pos="0.22 -0.08 0.10" euler="0 0 -28">
+            <geom name="geom_banana_02" type="mesh" mesh="mesh_banana" material="mat_banana"/>
+        </body>
+    </worldbody>
+</mujoco>

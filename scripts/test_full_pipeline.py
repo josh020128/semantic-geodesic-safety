@@ -23,6 +23,12 @@ from semantic_safety.risk_field.templates import build_risk_field_from_params
 from semantic_safety.phase0_dataset.prompts import SYSTEM_INSTRUCTION
 
 PRIOR_JSON_DEFAULT = "/home/gl34/research/semantic-geodesic-safety/data/semantic_risk_demo_claude.json"
+DEFAULT_VOXEL_RESOLUTION_M = 0.01  # 1 cm (was 4 mm / 0.004 m)
+
+# Overlay display (decoupled from risk-grid resolution where possible).
+OVERLAY_REFERENCE_RES_M = 0.01
+OVERLAY_SPLAT_RADIUS_M = 0.012
+OVERLAY_MAX_SPLATS = 120_000
 
 # ----------------------------------------------------------------------
 # Optional Claude hook
@@ -1380,6 +1386,26 @@ def draw_segmentation_by_attenuation(
     print(f"Saved segmentation semantic-weight overlay to '{output_path}'.")
 
 
+def _subsample_valid_mask_for_overlay(
+    valid_mask: np.ndarray,
+    res: float,
+    reference_res: float = OVERLAY_REFERENCE_RES_M,
+) -> np.ndarray:
+    """
+    Coarsen the voxel set used for display so finer risk grids do not splat
+    proportionally more points into the same physical region.
+    """
+    stride = max(1, int(np.floor(float(reference_res) / float(res) + 1e-12)))
+    if stride <= 1:
+        return valid_mask
+
+    gx = np.arange(valid_mask.shape[0])[:, None, None]
+    gy = np.arange(valid_mask.shape[1])[None, :, None]
+    gz = np.arange(valid_mask.shape[2])[None, None, :]
+    keep = (gx % stride == 0) & (gy % stride == 0) & (gz % stride == 0)
+    return valid_mask & keep
+
+
 def project_and_render_overlay(
     bgr_image,
     depth_metric,
@@ -1393,18 +1419,60 @@ def project_and_render_overlay(
     detections,
     res,
     output_path="continuous_risk_overlay.png",
+    *,
+    risk_draw_threshold: float = 0.10,
+    overlay_reference_res: float = OVERLAY_REFERENCE_RES_M,
+    overlay_splat_radius_m: float = OVERLAY_SPLAT_RADIUS_M,
+    overlay_max_splats: int = OVERLAY_MAX_SPLATS,
+    overlay_blur_kernel: int = 21,
 ):
+    """
+    Overlay ``V_final`` on the camera image.
+
+    - **Projection:** splat voxel risk onto the image plane (same world→camera
+      chain as the RGB view).
+    - **Resolution-stable display:** subsample voxels to ~``overlay_reference_res``
+      spacing, cap splat count, and use a fixed physical splat radius (meters)
+      so 4 mm vs 10 mm grids produce similar-looking overlays for the same field.
+    - **Smoothing:** Gaussian blur on the splatted risk canvas so the field looks
+      continuous.
+    - **Color:** ``COLORMAP_RAINBOW`` on normalized risk (inverted index so low
+      risk reads blue/violet and high risk orange/red, with green/yellow mid).
+    - **Normalization (display only):** ``display_max = max(1.0, max(V_final))``
+      so the heatmap red anchor is 1.0 when the scene peak is ≤ 1, and follows
+      the true peak when overlaps push values above 1 (e.g. 1.5, 2.0).
+    - **Alpha:** proportional to normalized risk (stronger risk → more opaque),
+      then Gaussian blur on the alpha canvas for smooth edges.
+    """
     print("\n--- VECTORIZED VOLUMETRIC SPLATTING ---")
 
     h, w, _ = bgr_image.shape
     fx, fy = intrinsics["fx"], intrinsics["fy"]
     cx, cy = w / 2.0, h / 2.0
 
-    # New scale assumption: V_final is typically in [0, 1] (soft) and can exceed 1 after summation.
-    # For visualization, we use a 0..1-centric threshold.
-    valid_mask = V_final > 0.10
+    valid_mask = V_final > float(risk_draw_threshold)
+    valid_mask = _subsample_valid_mask_for_overlay(
+        valid_mask,
+        res=res,
+        reference_res=overlay_reference_res,
+    )
     pts_world = np.vstack((X[valid_mask], Y[valid_mask], Z[valid_mask]))
     risks = V_final[valid_mask]
+
+    n_pts = pts_world.shape[1]
+    stride = max(1, int(np.floor(float(overlay_reference_res) / float(res) + 1e-12)))
+    print(
+        f"Overlay splat prep: grid_res={res*1000:.1f}mm, "
+        f"display_stride={stride}, candidates={n_pts}, "
+        f"splat_radius_m={overlay_splat_radius_m:.3f}, max_splats={overlay_max_splats}"
+    )
+
+    if overlay_max_splats > 0 and n_pts > overlay_max_splats:
+        rng = np.random.default_rng(0)
+        keep_idx = rng.choice(n_pts, size=int(overlay_max_splats), replace=False)
+        pts_world = pts_world[:, keep_idx]
+        risks = risks[keep_idx]
+        print(f"  subsampled splats: {n_pts} -> {overlay_max_splats}")
 
     if pts_world.shape[1] == 0:
         print("No high-risk voxels to draw.")
@@ -1452,7 +1520,6 @@ def project_and_render_overlay(
     u, v, risks, z_dist = u[sort_idx], v[sort_idx], risks[sort_idx], z_dist[sort_idx]
 
     risk_canvas = np.zeros((h, w), dtype=np.float32)
-    alpha_canvas = np.zeros((h, w), dtype=np.float32)
 
     drawn_voxels = 0
     for px, py, r, z in zip(u, v, risks, z_dist):
@@ -1460,17 +1527,14 @@ def project_and_render_overlay(
             scene_z = depth_metric[py, px]
 
             if z < scene_z + 0.02 or scene_z <= 0.01:
-                radius = max(2, int(fx * res * 1.0 / z))
+                radius = max(2, int(fx * float(overlay_splat_radius_m) / z))
                 cv2.circle(risk_canvas, (px, py), radius, float(r), -1)
-
-                alpha_val = float(np.clip((r - 0.10) / 0.90, 0.0, 1.0)) * 0.70
-                cv2.circle(alpha_canvas, (px, py), radius, float(alpha_val), -1)
                 drawn_voxels += 1
 
     print(f"Successfully painted {drawn_voxels} high-risk voxels onto screen.")
 
     # ------------------------------------------------------------------
-    # DEBUG: save raw pre-blur canvases
+    # DEBUG: raw splatted risk (pre Gaussian on risk)
     # ------------------------------------------------------------------
     raw_positive = risk_canvas[risk_canvas > 0]
     if raw_positive.size > 0:
@@ -1479,34 +1543,30 @@ def project_and_render_overlay(
         raw_vis = (255.0 * raw_vis).astype(np.uint8)
         cv2.imwrite("debug_risk_canvas_raw.png", raw_vis)
 
-    raw_alpha_vis = np.clip(alpha_canvas, 0.0, 1.0)
-    raw_alpha_vis = (255.0 * raw_alpha_vis).astype(np.uint8)
-    cv2.imwrite("debug_alpha_canvas_raw.png", raw_alpha_vis)
+    print("Saved pre-blur debug image: debug_risk_canvas_raw.png")
 
-    print("Saved pre-blur debug images: debug_risk_canvas_raw.png, debug_alpha_canvas_raw.png")
+    blur_k = int(overlay_blur_kernel)
+    if blur_k % 2 == 0:
+        blur_k += 1
+    blur_k = max(3, blur_k)
+    risk_canvas = cv2.GaussianBlur(risk_canvas, (blur_k, blur_k), 0)
 
-    risk_canvas = cv2.GaussianBlur(risk_canvas, (21, 21), 0)
-    alpha_canvas = cv2.GaussianBlur(alpha_canvas, (21, 21), 0)
+    # Display scale from the full 3D field (not only splatted 2D peaks).
+    display_max = max(1.0, float(np.max(V_final)))
+    norm_abs = np.clip(risk_canvas, 0.0, display_max) / display_max
 
-    positive = risk_canvas[risk_canvas > 0]
-    scene_peak = float(positive.max()) if positive.size > 0 else 0.0
-
-    unit_anchor = 1.0
-    vis_max = unit_anchor if scene_peak <= unit_anchor else scene_peak
-
-    norm_abs = np.clip(risk_canvas, 0, vis_max) / vis_max
-
-    # low-risk visibility boost for display only
+    # Optional gamma on [0,1] normalized risk (identity by default).
     display_gamma = 1.0
     norm_disp = np.power(norm_abs, display_gamma)
 
-    # alpha도 조금 올려서 너무 흐리지 않게
-    alpha_floor = 0.0
-    alpha_canvas = np.where(
-        norm_abs > 0,
-        alpha_floor + (1.0 - alpha_floor) * norm_disp,
-        0.0,
-    )
+    # Alpha proportional to normalized risk; blur alpha after for smooth compositing.
+    alpha_canvas = np.where(norm_abs > 0, norm_disp, 0.0).astype(np.float32)
+
+    raw_alpha_vis = np.clip(alpha_canvas, 0.0, 1.0)
+    cv2.imwrite("debug_alpha_canvas_raw.png", (255.0 * raw_alpha_vis).astype(np.uint8))
+    print("Saved normalized-risk alpha (pre alpha-blur): debug_alpha_canvas_raw.png")
+
+    alpha_canvas = cv2.GaussianBlur(alpha_canvas, (blur_k, blur_k), 0)
 
     col_idx = ((1.0 - norm_disp) * 255).astype(np.uint8)
     color_heatmap = cv2.applyColorMap(col_idx, cv2.COLORMAP_RAINBOW)
@@ -1847,6 +1907,7 @@ def run_pipeline(
     use_table_top_filter: bool = False,
     prior_json_path: str = PRIOR_JSON_DEFAULT,
     *,
+    voxel_resolution_m: float = DEFAULT_VOXEL_RESOLUTION_M,
     time_risk_voxel_map: bool = True,
 ):
     if gt_blocker_geoms is None:
@@ -1863,6 +1924,7 @@ def run_pipeline(
     print(f"GT blocker debug mode: [{'ON' if use_gt_blockers else 'OFF'}]\n")
     print(f"Table-top filter: [{'ON' if use_table_top_filter else 'OFF'}]\n")
     print(f"Prior JSON path: [{prior_json_path}]")
+    print(f"Voxel resolution: [{voxel_resolution_m * 1000:.1f} mm]")
 
     table_top_z = None
 
@@ -2144,7 +2206,7 @@ def run_pipeline(
         _risk_voxel_map_t0 = time.perf_counter() if time_risk_voxel_map else None
 
         world_pts = np.concatenate([obj["world_points"] for obj in object_infos], axis=0)
-        res = 0.004
+        res = float(voxel_resolution_m)
         bounds = build_global_workspace_bounds(
             world_pts,
             grid_margin_xy=0.30,
@@ -2322,6 +2384,8 @@ def run_pipeline(
         # ------------------------------------------------------------------
         # 5) Per-object risk field generation
         # ------------------------------------------------------------------
+        # One 3D volume V_object per object (built below), then voxel-wise sum
+        # across objects into V_final (see compute_sum_superposition).
         hazard_fields = []
         per_object_debug = []
 
@@ -2498,8 +2562,9 @@ def run_pipeline(
                 )
                 V_inf_z = V_inf_z * hard_axis_cap.astype(np.float64)
 
-            # Conservative merge: inf-column overrides where it exists,
-            # but does not enlarge the field by summation elsewhere.
+            # Same object, two components: soft Gaussian field vs persistent upward
+            # column when w_+z is inf. Combine with max (not sum) so the column
+            # does not double-count with the soft tail.
             V_object = np.maximum(V_object_soft, V_inf_z)
 
             obj["d_euc"] = d_euc
@@ -2562,6 +2627,8 @@ def run_pipeline(
             V_final = np.zeros(grid.shape, dtype=np.float32)
             semantic_hard_mask = np.zeros(grid.shape, dtype=bool)
         else:
+            # Across objects: voxel-wise sum of each V_object, then clip to v_max
+            # so overlaps add but stay bounded.
             V_final = compute_sum_superposition(
                 hazard_fields,
                 v_max=8.0,
@@ -2592,6 +2659,7 @@ def run_pipeline(
                 "debug_oracle_blockers": gt_blocker_info,
                 "detected_objects": per_object_debug,
                 "prior_json_path": prior_json_path,
+                "voxel_resolution_m": res,
                 "pass1_candidates": pass1_candidates,
                 "pass2_candidates": pass2_candidates,
                 "detection_pass_used": detection_pass_used,
@@ -2703,6 +2771,13 @@ if __name__ == "__main__":
         default=PRIOR_JSON_DEFAULT,
         help="Path to semantic prior JSON used for prior-driven candidate filtering.",
     )
+    parser.add_argument(
+        "--voxel-resolution",
+        type=float,
+        default=DEFAULT_VOXEL_RESOLUTION_M,
+        metavar="M",
+        help="Workspace grid voxel size in meters (default: 0.01 = 1 cm).",
+    )
     args = parser.parse_args()
 
     run_pipeline(
@@ -2715,4 +2790,5 @@ if __name__ == "__main__":
         gt_blocker_geoms=args.gt_blocker_geoms,
         use_table_top_filter=args.use_table_top_filter,
         prior_json_path=args.prior_json_path,
+        voxel_resolution_m=args.voxel_resolution,
     )

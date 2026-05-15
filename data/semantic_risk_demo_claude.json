@@ -33,7 +33,7 @@
             "w_-x": 0.4,
             "w_+y": 0.4,
             "w_-y": 0.4,
-            "w_+z": 0.7,
+            "w_+z": "inf",
             "w_-z": 0.0
         },
         "sigma_m": 0.1
@@ -114,7 +114,59 @@
             "w_+z": 0.3,
             "w_-z": 0.0
         },
-        "sigma_m": 0.09
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "cup of water",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
     },
     {
         "manipulated": "cup of water",
@@ -151,9 +203,9 @@
             "w_+y": 0.3,
             "w_-y": 0.3,
             "w_+z": 0.4,
-            "w_-z": 0.0
+            "w_-z": 0.1
         },
-        "sigma_m": 0.09
+        "sigma_m": 0.08
     },
     {
         "manipulated": "kitchen knife",
@@ -163,10 +215,10 @@
             "w_-x": 0.2,
             "w_+y": 0.2,
             "w_-y": 0.2,
-            "w_+z": 0.3,
-            "w_-z": 0.0
+            "w_+z": 0.2,
+            "w_-z": 0.1
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.07
     },
     {
         "manipulated": "kitchen knife",
@@ -176,10 +228,10 @@
             "w_-x": 0.2,
             "w_+y": 0.2,
             "w_-y": 0.2,
-            "w_+z": 0.3,
-            "w_-z": 0.0
+            "w_+z": 0.2,
+            "w_-z": 0.1
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.07
     },
     {
         "manipulated": "kitchen knife",
@@ -190,7 +242,7 @@
             "w_+y": 0.3,
             "w_-y": 0.3,
             "w_+z": 0.5,
-            "w_-z": 0.0
+            "w_-z": 0.1
         },
         "sigma_m": 0.1
     },
@@ -203,33 +255,33 @@
             "w_+y": 0.2,
             "w_-y": 0.2,
             "w_+z": 0.3,
-            "w_-z": 0.0
+            "w_-z": 0.1
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.07
     },
     {
         "manipulated": "kitchen knife",
         "scene": "bowl",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.07
     },
     {
         "manipulated": "kitchen knife",
         "scene": "soccer ball",
         "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.0
+            "w_+x": 0.7,
+            "w_-x": 0.7,
+            "w_+y": 0.7,
+            "w_-y": 0.7,
+            "w_+z": 0.8,
+            "w_-z": 0.3
         },
         "sigma_m": 0.1
     },
@@ -237,27 +289,79 @@
         "manipulated": "kitchen knife",
         "scene": "power drill",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.07
     },
     {
         "manipulated": "kitchen knife",
         "scene": "bleach cleanser",
         "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.6,
-            "w_-z": 0.0
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.7,
+            "w_-z": 0.1
         },
         "sigma_m": 0.1
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "kitchen knife",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
     },
     {
         "manipulated": "kitchen knife",
@@ -289,11 +393,11 @@
         "manipulated": "hot soldering iron",
         "scene": "cup of water",
         "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
             "w_-z": 0.1
         },
         "sigma_m": 0.1
@@ -302,24 +406,24 @@
         "manipulated": "hot soldering iron",
         "scene": "kitchen knife",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.2,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
             "w_-z": 0.0
         },
-        "sigma_m": 0.07
+        "sigma_m": 0.06
     },
     {
         "manipulated": "hot soldering iron",
         "scene": "hot soldering iron",
         "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.3,
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
             "w_-z": 0.1
         },
         "sigma_m": 0.08
@@ -341,38 +445,38 @@
         "manipulated": "hot soldering iron",
         "scene": "mug",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.06
     },
     {
         "manipulated": "hot soldering iron",
         "scene": "bowl",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.06
     },
     {
         "manipulated": "hot soldering iron",
         "scene": "soccer ball",
         "weights": {
-            "w_+x": 0.5,
-            "w_-x": 0.5,
-            "w_+y": 0.5,
-            "w_-y": 0.5,
-            "w_+z": 0.5,
-            "w_-z": 0.1
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.7,
+            "w_-z": 0.2
         },
         "sigma_m": 0.1
     },
@@ -404,6 +508,58 @@
     },
     {
         "manipulated": "hot soldering iron",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.5,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "hot soldering iron",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "hot soldering iron",
         "scene": "table",
         "weights": {
             "w_+x": 0.0,
@@ -432,40 +588,40 @@
         "manipulated": "laptop",
         "scene": "cup of water",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.1,
-            "w_-z": 0.0
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.2
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.12
     },
     {
         "manipulated": "laptop",
         "scene": "kitchen knife",
         "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.2,
-            "w_-z": 0.0
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.5,
+            "w_-z": 0.1
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.1
     },
     {
         "manipulated": "laptop",
         "scene": "hot soldering iron",
         "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.2,
-            "w_-z": 0.0
+            "w_+x": 0.6,
+            "w_-x": 0.6,
+            "w_+y": 0.6,
+            "w_-y": 0.6,
+            "w_+z": 0.7,
+            "w_-z": 0.2
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.1
     },
     {
         "manipulated": "laptop",
@@ -475,8 +631,8 @@
             "w_-x": 0.3,
             "w_+y": 0.3,
             "w_-y": 0.3,
-            "w_+z": 0.2,
-            "w_-z": 0.0
+            "w_+z": 0.4,
+            "w_-z": 0.1
         },
         "sigma_m": 0.1
     },
@@ -484,27 +640,27 @@
         "manipulated": "laptop",
         "scene": "mug",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.1,
-            "w_-z": 0.0
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.1
     },
     {
         "manipulated": "laptop",
         "scene": "bowl",
         "weights": {
-            "w_+x": 0.1,
-            "w_-x": 0.1,
-            "w_+y": 0.1,
-            "w_-y": 0.1,
-            "w_+z": 0.1,
-            "w_-z": 0.0
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.1
         },
-        "sigma_m": 0.07
+        "sigma_m": 0.08
     },
     {
         "manipulated": "laptop",
@@ -514,8 +670,8 @@
             "w_-x": 0.2,
             "w_+y": 0.2,
             "w_-y": 0.2,
-            "w_+z": 0.1,
-            "w_-z": 0.0
+            "w_+z": 0.2,
+            "w_-z": 0.1
         },
         "sigma_m": 0.1
     },
@@ -523,12 +679,12 @@
         "manipulated": "laptop",
         "scene": "power drill",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
-            "w_-z": 0.0
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.1
         },
         "sigma_m": 0.1
     },
@@ -536,14 +692,66 @@
         "manipulated": "laptop",
         "scene": "bleach cleanser",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.2
+        },
+        "sigma_m": 0.12
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
             "w_-z": 0.0
         },
-        "sigma_m": 0.1
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "laptop",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
     },
     {
         "manipulated": "laptop",
@@ -575,11 +783,11 @@
         "manipulated": "mug",
         "scene": "cup of water",
         "weights": {
-            "w_+x": 0.1,
-            "w_-x": 0.1,
-            "w_+y": 0.1,
-            "w_-y": 0.1,
-            "w_+z": 0.2,
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
             "w_-z": 0.0
         },
         "sigma_m": 0.08
@@ -601,17 +809,797 @@
         "manipulated": "mug",
         "scene": "hot soldering iron",
         "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.4,
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
             "w_-z": 0.1
         },
         "sigma_m": 0.1
     },
     {
         "manipulated": "mug",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.5,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "mug",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "mug",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "mug",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "mug",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "mug",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.09
+    },
+    {
+        "manipulated": "mug",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "mug",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "mug",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "mug",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "mug",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "mug",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.5,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "bowl",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.12
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.6,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.12
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "soccer ball",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.6,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.12
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.5,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "power drill",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.8,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.12
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.6,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "bleach cleanser",
         "scene": "laptop",
         "weights": {
             "w_+x": 0.4,
@@ -624,176 +1612,33 @@
         "sigma_m": 0.12
     },
     {
-        "manipulated": "mug",
+        "manipulated": "bleach cleanser",
         "scene": "mug",
-        "weights": {
-            "w_+x": 0.1,
-            "w_-x": 0.1,
-            "w_+y": 0.1,
-            "w_-y": 0.1,
-            "w_+z": 0.1,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.07
-    },
-    {
-        "manipulated": "mug",
-        "scene": "bowl",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "mug",
-        "scene": "soccer ball",
-        "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.2,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "mug",
-        "scene": "power drill",
         "weights": {
             "w_+x": 0.3,
             "w_-x": 0.3,
             "w_+y": 0.3,
             "w_-y": 0.3,
+            "w_+z": 0.6,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
             "w_+z": 0.5,
             "w_-z": 0.0
         },
         "sigma_m": 0.1
     },
     {
-        "manipulated": "mug",
-        "scene": "bleach cleanser",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.4,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "mug",
-        "scene": "table",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "mug",
-        "scene": "shelf",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "cup of water",
-        "weights": {
-            "w_+x": 0.1,
-            "w_-x": 0.1,
-            "w_+y": 0.1,
-            "w_-y": 0.1,
-            "w_+z": 0.2,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.08
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "kitchen knife",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.2,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.08
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "hot soldering iron",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.4,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "laptop",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": "inf",
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "mug",
-        "weights": {
-            "w_+x": 0.1,
-            "w_-x": 0.1,
-            "w_+y": 0.1,
-            "w_-y": 0.1,
-            "w_+z": 0.2,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.08
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "bowl",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "bowl",
+        "manipulated": "bleach cleanser",
         "scene": "soccer ball",
         "weights": {
             "w_+x": 0.2,
@@ -806,35 +1651,22 @@
         "sigma_m": 0.1
     },
     {
-        "manipulated": "bowl",
+        "manipulated": "bleach cleanser",
         "scene": "power drill",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.7,
             "w_-z": 0.0
         },
         "sigma_m": 0.1
     },
     {
-        "manipulated": "bowl",
+        "manipulated": "bleach cleanser",
         "scene": "bleach cleanser",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "bowl",
-        "scene": "table",
-        "weights": {
             "w_+x": 0.0,
             "w_-x": 0.0,
             "w_+y": 0.0,
@@ -845,280 +1677,59 @@
         "sigma_m": 0.0
     },
     {
-        "manipulated": "bowl",
-        "scene": "shelf",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "cup of water",
-        "weights": {
-            "w_+x": 0.5,
-            "w_-x": 0.5,
-            "w_+y": 0.5,
-            "w_-y": 0.5,
-            "w_+z": 0.6,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.15
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "kitchen knife",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.3,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "hot soldering iron",
-        "weights": {
-            "w_+x": 0.5,
-            "w_-x": 0.5,
-            "w_+y": 0.5,
-            "w_-y": 0.5,
-            "w_+z": 0.4,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "laptop",
-        "weights": {
-            "w_+x": 0.5,
-            "w_-x": 0.5,
-            "w_+y": 0.5,
-            "w_-y": 0.5,
-            "w_+z": 0.6,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.15
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "mug",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "bowl",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.4,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "soccer ball",
-        "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.2,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "power drill",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "bleach cleanser",
-        "weights": {
-            "w_+x": 0.5,
-            "w_-x": 0.5,
-            "w_+y": 0.5,
-            "w_-y": 0.5,
-            "w_+z": 0.6,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.15
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "table",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "soccer ball",
-        "scene": "shelf",
-        "weights": {
-            "w_+x": 0.0,
-            "w_-x": 0.0,
-            "w_+y": 0.0,
-            "w_-y": 0.0,
-            "w_+z": 0.0,
-            "w_-z": 0.0
-        },
-        "sigma_m": 0.0
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "cup of water",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "kitchen knife",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.3,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "hot soldering iron",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.3,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "laptop",
+        "manipulated": "bleach cleanser",
+        "scene": "apple",
         "weights": {
             "w_+x": 0.5,
             "w_-x": 0.5,
             "w_+y": 0.5,
             "w_-y": 0.5,
             "w_+z": 0.7,
-            "w_-z": 0.1
+            "w_-z": 0.0
         },
-        "sigma_m": 0.12
+        "sigma_m": 0.1
     },
     {
-        "manipulated": "power drill",
-        "scene": "mug",
+        "manipulated": "bleach cleanser",
+        "scene": "banana",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.7,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "bleach cleanser",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
             "w_-z": 0.0
         },
         "sigma_m": 0.08
     },
     {
-        "manipulated": "power drill",
-        "scene": "bowl",
+        "manipulated": "bleach cleanser",
+        "scene": "can",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.0
     },
     {
-        "manipulated": "power drill",
-        "scene": "soccer ball",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.3,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "power drill",
-        "weights": {
-            "w_+x": 0.3,
-            "w_-x": 0.3,
-            "w_+y": 0.3,
-            "w_-y": 0.3,
-            "w_+z": 0.3,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.08
-    },
-    {
-        "manipulated": "power drill",
-        "scene": "bleach cleanser",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.1
-    },
-    {
-        "manipulated": "power drill",
+        "manipulated": "bleach cleanser",
         "scene": "table",
         "weights": {
             "w_+x": 0.0,
@@ -1131,7 +1742,7 @@
         "sigma_m": 0.0
     },
     {
-        "manipulated": "power drill",
+        "manipulated": "bleach cleanser",
         "scene": "shelf",
         "weights": {
             "w_+x": 0.0,
@@ -1144,7 +1755,7 @@
         "sigma_m": 0.0
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "cup of water",
         "weights": {
             "w_+x": 0.2,
@@ -1157,8 +1768,34 @@
         "sigma_m": 0.08
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "apple",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "apple",
+        "scene": "laptop",
         "weights": {
             "w_+x": 0.2,
             "w_-x": 0.2,
@@ -1170,98 +1807,124 @@
         "sigma_m": 0.08
     },
     {
-        "manipulated": "bleach cleanser",
-        "scene": "hot soldering iron",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.5,
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "bleach cleanser",
-        "scene": "laptop",
-        "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": "inf",
-            "w_-z": 0.1
-        },
-        "sigma_m": 0.12
-    },
-    {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "mug",
         "weights": {
             "w_+x": 0.2,
             "w_-x": 0.2,
             "w_+y": 0.2,
             "w_-y": 0.2,
-            "w_+z": 0.4,
+            "w_+z": 0.3,
             "w_-z": 0.0
         },
         "sigma_m": 0.08
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "bowl",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
             "w_-z": 0.0
         },
-        "sigma_m": 0.08
+        "sigma_m": 0.0
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "soccer ball",
         "weights": {
-            "w_+x": 0.2,
-            "w_-x": 0.2,
-            "w_+y": 0.2,
-            "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
             "w_-z": 0.0
         },
         "sigma_m": 0.08
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "power drill",
         "weights": {
-            "w_+x": 0.4,
-            "w_-x": 0.4,
-            "w_+y": 0.4,
-            "w_-y": 0.4,
-            "w_+z": 0.6,
-            "w_-z": 0.1
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
         },
-        "sigma_m": 0.1
+        "sigma_m": 0.07
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
         "scene": "bleach cleanser",
         "weights": {
             "w_+x": 0.2,
             "w_-x": 0.2,
             "w_+y": 0.2,
             "w_-y": 0.2,
-            "w_+z": 0.3,
+            "w_+z": 0.2,
             "w_-z": 0.0
         },
         "sigma_m": 0.08
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "apple",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "apple",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "apple",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "apple",
         "scene": "table",
         "weights": {
             "w_+x": 0.0,
@@ -1274,7 +1937,592 @@
         "sigma_m": 0.0
     },
     {
-        "manipulated": "bleach cleanser",
+        "manipulated": "apple",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "banana",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "banana",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.4,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.09
+    },
+    {
+        "manipulated": "banana",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "banana",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "banana",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "banana",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "banana",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "banana",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.05
+    },
+    {
+        "manipulated": "banana",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "banana",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "box",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "box",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "box",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.5,
+            "w_-x": 0.5,
+            "w_+y": 0.5,
+            "w_-y": 0.5,
+            "w_+z": 0.4,
+            "w_-z": 0.1
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "box",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "box",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "box",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "box",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "box",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "box",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.4,
+            "w_-x": 0.4,
+            "w_+y": 0.4,
+            "w_-y": 0.4,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "box",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "box",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "box",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "box",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "box",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "box",
+        "scene": "shelf",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "can",
+        "scene": "cup of water",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "can",
+        "scene": "kitchen knife",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "can",
+        "scene": "hot soldering iron",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "can",
+        "scene": "laptop",
+        "weights": {
+            "w_+x": 0.3,
+            "w_-x": 0.3,
+            "w_+y": 0.3,
+            "w_-y": 0.3,
+            "w_+z": 0.4,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.1
+    },
+    {
+        "manipulated": "can",
+        "scene": "mug",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.07
+    },
+    {
+        "manipulated": "can",
+        "scene": "bowl",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "can",
+        "scene": "soccer ball",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.1,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "can",
+        "scene": "power drill",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "can",
+        "scene": "bleach cleanser",
+        "weights": {
+            "w_+x": 0.2,
+            "w_-x": 0.2,
+            "w_+y": 0.2,
+            "w_-y": 0.2,
+            "w_+z": 0.3,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.08
+    },
+    {
+        "manipulated": "can",
+        "scene": "apple",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "can",
+        "scene": "banana",
+        "weights": {
+            "w_+x": 0.1,
+            "w_-x": 0.1,
+            "w_+y": 0.1,
+            "w_-y": 0.1,
+            "w_+z": 0.2,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.06
+    },
+    {
+        "manipulated": "can",
+        "scene": "box",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "can",
+        "scene": "can",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "can",
+        "scene": "table",
+        "weights": {
+            "w_+x": 0.0,
+            "w_-x": 0.0,
+            "w_+y": 0.0,
+            "w_-y": 0.0,
+            "w_+z": 0.0,
+            "w_-z": 0.0
+        },
+        "sigma_m": 0.0
+    },
+    {
+        "manipulated": "can",
         "scene": "shelf",
         "weights": {
             "w_+x": 0.0,

@@ -37,11 +37,14 @@ def compute_sum_superposition(
     v_max: float = 8.0,
 ) -> np.ndarray:
     """
-    Simple additive superposition for soft semantic fields.
+    Combine per-object volumes ``V_object`` after each has been built separately.
 
-    New scale assumption:
-    - each per-object soft field is typically in [0, 1]
-    - sum across multiple objects can exceed 1
+    **Between objects:** voxel-wise sum so overlapping fields add; clip to
+    ``v_max`` so the combined field cannot grow without bound.
+
+    **Within a single object** (caller responsibility): merge soft Gaussian risk
+    with the persistent ``w_+z = inf`` upward column using ``np.maximum``, not
+    sum—this function only handles the cross-object stage.
     """
     if not hazard_fields:
         raise ValueError("Cannot superpose an empty list of hazard fields.")
