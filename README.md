@@ -22,7 +22,24 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 python scripts/test_full_siglip2_pipeline.py --xml-path tabletop.xml --manipulated "cup of water" --scene-label "power drill"
 ```
 
-Use `--help` on each script for flags (prior JSON, SAM/SigLIP options, `--time-risk-voxel-map` / `--no-time-risk-voxel-map` for backend timing, etc.).
+**Example: centered power drill (MuJoCo), auto labels, 10 mm voxels:**
+
+```bash
+python scripts/test_full_siglip2_pipeline.py \
+  --xml-path power_drill_center.xml \
+  --manipulated "hot soldering iron" \
+  --scene-label auto \
+  --candidate-labels auto \
+  --enable-post-merge \
+  --voxel-resolution 0.01
+```
+
+- **`--scene-label auto`** — all detected objects can emit hazard fields (not a single scene target).
+- **`--candidate-labels auto`** — detector / SigLIP2 subset uses the default tabletop asset list (`apple`, `banana`, `bowl`, `power drill`, …); see `DEFAULT_ASSET_CANDIDATE_LABELS` in `scripts/test_full_siglip2_pipeline.py`.
+- **`--voxel-resolution 0.01`** — 1 cm workspace grid (default); use `0.004` for 4 mm.
+- **`--enable-post-merge`** — merge overlapping MobileSAM proposals before labeling.
+
+Use `--help` on each script for flags (prior JSON, SAM/SigLIP options, `--time-risk-voxel-map` / `--no-time-risk-voxel-map` for backend timing, `--no-candidate-subset-enabled` to score against the full LVIS bank, etc.).
 
 ---
 
